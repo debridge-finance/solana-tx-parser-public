@@ -1,7 +1,8 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tool for parsing arbitrary solana transactions with IDL/custom parsers",
+  "keywords": ["solana", "web3", "transaction"],
   "author": "Anton Kuzmenko",
   "license": "ISC",
   "browser": "./dist/browser/index.js",
@@ -20,6 +21,7 @@
     "build:node": "tsc -p tsconfig.cjs.json",
     "build:browser": "rollup -c",
     "build": "npm run build:esm && npm run build:node && npm run build:browser",
+    "prepublishOnly": "npm run build",
     "test:ix": "mocha -r ts-node/register -b -t 200000 ./tests/parseIx.test.ts",
     "test:tx": "mocha -r ts-node/register -t 200000 ./tests/parseTransaction.test.ts",
     "test:sysTx": "mocha -r ts-node/register -b -t 200000 ./tests/parseSystemTransaction.test.ts",
