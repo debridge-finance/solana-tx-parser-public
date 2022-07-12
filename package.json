@@ -4,7 +4,7 @@
   "description": "Tool for parsing arbitrary solana transactions with IDL/custom parsers",
   "keywords": ["solana", "web3", "transaction"],
   "author": "Anton Kuzmenko",
-  "license": "ISC",
+  "license": "LGPL",
   "browser": "./dist/browser/index.js",
   "module": "./dist/esm/index.js",
   "main": "./dist/cjs/index.js",
