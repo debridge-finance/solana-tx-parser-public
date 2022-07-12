@@ -1,4 +1,4 @@
-[@debridge-finance/solana-transaction-parser](../README.md) / [Exports](../modules.md) / ParsedAccount
+[@debridge-finance/solana-transaction-parser](../README.md) / ParsedAccount
 
 # Interface: ParsedAccount
 
@@ -24,4 +24,4 @@ Account name, same as in Idl, nested accounts look like `account > nestedAccount
 
 #### Defined in
 
-interfaces.ts:39
+[interfaces.ts:39](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L39)

@@ -1,4 +1,4 @@
-[@debridge-finance/solana-transaction-parser](../README.md) / [Exports](../modules.md) / ParsedIdlInstruction
+[@debridge-finance/solana-transaction-parser](../README.md) / ParsedIdlInstruction
 
 # Interface: ParsedIdlInstruction<I, IxName\>
 
@@ -7,7 +7,7 @@
 | Name | Type |
 | :------ | :------ |
 | `I` | extends `Idl` |
-| `IxName` | extends [`InstructionNames`](../modules.md#instructionnames)<`I`\> = [`InstructionNames`](../modules.md#instructionnames)<`I`\> |
+| `IxName` | extends [`InstructionNames`](../README.md#instructionnames)<`I`\> = [`InstructionNames`](../README.md#instructionnames)<`I`\> |
 
 ## Table of contents
 
@@ -28,19 +28,19 @@ Parsed accounts
 
 #### Defined in
 
-interfaces.ts:73
+[interfaces.ts:86](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L86)
 
 ___
 
 ### args
 
-• **args**: [`ParsedIdlArgs`](../modules.md#parsedidlargs)<`I`, `IxName`\>
+• **args**: [`ParsedIdlArgs`](../README.md#parsedidlargs)<`I`, `IxName`\>
 
 Parsed arguments
 
 #### Defined in
 
-interfaces.ts:71
+[interfaces.ts:84](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L84)
 
 ___
 
@@ -52,7 +52,7 @@ Instruction name
 
 #### Defined in
 
-interfaces.ts:68
+[interfaces.ts:81](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L81)
 
 ___
 
@@ -62,4 +62,4 @@ ___
 
 #### Defined in
 
-interfaces.ts:69
+[interfaces.ts:82](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L82)

@@ -1,4 +1,4 @@
-[@debridge-finance/solana-transaction-parser](../README.md) / [Exports](../modules.md) / ProgramInfoType
+[@debridge-finance/solana-transaction-parser](../README.md) / ProgramInfoType
 
 # Interface: ProgramInfoType
 
@@ -17,7 +17,7 @@
 
 #### Defined in
 
-interfaces.ts:77
+[interfaces.ts:90](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L90)
 
 ___
 
@@ -27,4 +27,4 @@ ___
 
 #### Defined in
 
-interfaces.ts:78
+[interfaces.ts:91](https://github.com/debridge-finance/solana-tx-parser-public/blob/b05f439/src/interfaces.ts#L91)

@@ -1,4 +1,4 @@
-[@debridge-finance/solana-transaction-parser](../README.md) / [Exports](../modules.md) / SolanaParser
+[@debridge-finance/solana-transaction-parser](../README.md) / SolanaParser
 
 # Class: SolanaParser
 
@@ -41,7 +41,7 @@ but may be overriden by providing custom idl/custom parser
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `programInfos` | [`ProgramInfoType`](../interfaces/ProgramInfoType.md)[] | list of objects which contains programId and corresponding idl |
-| `parsers?` | [`InstructionParserInfo`](../modules.md#instructionparserinfo)[] | list of pairs (programId, custom parser) |
+| `parsers?` | [`InstructionParserInfo`](../README.md#instructionparserinfo)[] | list of pairs (programId, custom parser) |
 
 ## Methods
 
@@ -56,7 +56,7 @@ Adds (or updates) parser for provided programId
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `programId` | `PublicKey` | program id to add parser for |
-| `parser` | [`ParserFunction`](../modules.md#parserfunction)<`Idl`, `string`\> | parser to parse programId instructions |
+| `parser` | [`ParserFunction`](../README.md#parserfunction)<`Idl`, `string`\> | parser to parse programId instructions |
 
 #### Returns
 
@@ -85,7 +85,7 @@ ___
 
 ### parseInstruction
 
-▸ **parseInstruction**<`I`, `IxName`\>(`instruction`): [`ParsedInstruction`](../modules.md#parsedinstruction)<`I`, `IxName`\>
+▸ **parseInstruction**<`I`, `IxName`\>(`instruction`): [`ParsedInstruction`](../README.md#parsedinstruction)<`I`, `IxName`\>
 
 Parses instruction
 
@@ -104,7 +104,7 @@ Parses instruction
 
 #### Returns
 
-[`ParsedInstruction`](../modules.md#parsedinstruction)<`I`, `IxName`\>
+[`ParsedInstruction`](../README.md#parsedinstruction)<`I`, `IxName`\>
 
 parsed transaction instruction or UnknownInstruction
 
@@ -112,7 +112,7 @@ ___
 
 ### parseTransaction
 
-▸ **parseTransaction**(`connection`, `txId`, `flatten?`): `Promise`<``null`` \| [`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]\>
+▸ **parseTransaction**(`connection`, `txId`, `flatten?`): `Promise`<``null`` \| [`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]\>
 
 Fetches tx from blockchain and parses it
 
@@ -126,7 +126,7 @@ Fetches tx from blockchain and parses it
 
 #### Returns
 
-`Promise`<``null`` \| [`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]\>
+`Promise`<``null`` \| [`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]\>
 
 list of parsed instructions
 
@@ -134,7 +134,7 @@ ___
 
 ### parseTransactionData
 
-▸ **parseTransactionData**(`txMessage`): [`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+▸ **parseTransactionData**(`txMessage`): [`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 Parses transaction data
 
@@ -146,7 +146,7 @@ Parses transaction data
 
 #### Returns
 
-[`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+[`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 list of parsed instructions
 
@@ -154,7 +154,7 @@ ___
 
 ### parseTransactionDump
 
-▸ **parseTransactionDump**(`txDump`): [`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+▸ **parseTransactionDump**(`txDump`): [`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 Parses transaction dump
 
@@ -166,7 +166,7 @@ Parses transaction dump
 
 #### Returns
 
-[`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+[`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 list of parsed instructions
 
@@ -174,7 +174,7 @@ ___
 
 ### parseTransactionParsedData
 
-▸ **parseTransactionParsedData**(`txParsedMessage`): [`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+▸ **parseTransactionParsedData**(`txParsedMessage`): [`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 Parses transaction data retrieved from Connection.getParsedTransaction
 
@@ -186,7 +186,7 @@ Parses transaction data retrieved from Connection.getParsedTransaction
 
 #### Returns
 
-[`ParsedInstruction`](../modules.md#parsedinstruction)<`Idl`, `string`\>[]
+[`ParsedInstruction`](../README.md#parsedinstruction)<`Idl`, `string`\>[]
 
 list of parsed instructions
 
