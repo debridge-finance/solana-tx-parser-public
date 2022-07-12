@@ -25,6 +25,7 @@
     "test:ix": "mocha -r ts-node/register -b -t 200000 ./tests/parseIx.test.ts",
     "test:tx": "mocha -r ts-node/register -t 200000 ./tests/parseTransaction.test.ts",
     "test:sysTx": "mocha -r ts-node/register -b -t 200000 ./tests/parseSystemTransaction.test.ts",
+    "test:custom": "mocha -r ts-node/register -b -t 200000 ./tests/customParser.test.ts",
     "prettify": "prettier --write ./**/*.ts",
     "lint": "eslint --config .eslintrc \"./{src,tests}/**/*.{js,ts}\"",
     "lint:dump": "eslint --print-config ./.eslintrc.json"

@@ -61,7 +61,20 @@ export type UnknownInstruction = {
 	programId: PublicKey;
 };
 
-export type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = UnknownInstruction | ParsedIdlInstruction<I, IxName>;
+export type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> =
+	| UnknownInstruction
+	| ParsedIdlInstruction<I, IxName>
+	| ParsedCustomInstruction;
+
+export interface ParsedCustomInstruction {
+	/** Instruction name */
+	name: string;
+	programId: PublicKey;
+	/** Parsed arguments */
+	args: unknown;
+	/** Parsed accounts */
+	accounts: ParsedAccount[];
+}
 
 export interface ParsedIdlInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> {
 	/** Instruction name */
