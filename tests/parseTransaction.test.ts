@@ -6,7 +6,7 @@ import { BN, Idl } from "@project-serum/anchor";
 import { PublicKey, Connection } from "@solana/web3.js";
 
 import { SolanaParser } from "../src";
-import { ParsedAccount, ParsedArgs, ParsedIdlInstruction } from "../src/interfaces";
+import { ParsedAccount, ParsedIdlInstruction, ParsedInstruction } from "../src/interfaces";
 
 import { IDL as JupiterIdl, Jupiter } from "./idl/jupiter";
 
@@ -32,16 +32,16 @@ function toString(value: unknown, depth: number = 0): string {
 	return value as string;
 }
 
-function stringifyArgs(args: ParsedArgs) {
+function stringifyArgs(args: unknown) {
 	const result = [];
-	for (const [argName, argValue] of Object.entries(args)) {
+	for (const [argName, argValue] of Object.entries(args as { [s: string]: unknown })) {
 		result.push(`${argName} = ${toString(argValue)}`);
 	}
 
 	return result.length > 0 ? result.join("\n") : "None";
 }
 
-function printParsedIx(parsedIx: ParsedIdlInstruction<Idl>) {
+function printParsedIx(parsedIx: ParsedInstruction<Idl>) {
 	console.log(
 		`----------\nProgram: ${parsedIx.programId.toBase58()}\nName: ${parsedIx.name}\n***Accounts***\n${parsedIx.accounts
 			.map((account) => stringifyAccount(account))
@@ -52,13 +52,13 @@ function printParsedIx(parsedIx: ParsedIdlInstruction<Idl>) {
 function parseTransactionTest() {
 	it("can parse jupiter tx", async () => {
 		const rpcConnection = new Connection("https://jupiter.genesysgo.net");
-		const txParser = new SolanaParser([]);
-		txParser.addParserFromIdl("JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo", JupiterIdl as unknown as Idl);
+		const txParser = new SolanaParser([{ idl: JupiterIdl as unknown as Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }]);
 		const parsed = await txParser.parseTransaction(
 			rpcConnection,
 			"5zgvxQjV6BisU8SfahqasBZGfXy5HJ3YxYseMBG7VbR4iypDdtdymvE1jmEMG7G39bdVBaHhLYUHUejSTtuZEpEj",
 			false,
 		);
+		parsed?.find((pix) => pix.name === "tokenSwap") as ParsedIdlInstruction<Jupiter, "setTokenLedger">;
 		parsed?.map((pix) => printParsedIx(pix));
 		if (!parsed || parsed.length != 3) return Promise.reject("Failed to parse transaction correctly");
 		const swap = parsed[1] as ParsedIdlInstruction<Jupiter, "tokenSwap">;
