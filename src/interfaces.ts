@@ -13,6 +13,7 @@ export type LogContext = {
 	depth: number;
 	id: number;
 	instructionIndex: number;
+	invokeResult?: string;
 };
 
 export type TransactionWithLogs = {

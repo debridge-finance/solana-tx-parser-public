@@ -142,7 +142,7 @@ function newLogContext(programId: string, depth: number, id: number, instruction
  */
 export function parseLogs(logs: string[]): LogContext[] {
 	const parserRe =
-		/(?<programInvoke>^Program (?<invokeProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) invoke \[(?<level>\d+)\]$)|(?<programSuccessResult>^Program (?<successResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) success$)|(?<programFailedResult>^Program (?<failedResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) failed: (?<failedResultErr>.*)$)|(?<programCompleteFailedResult>^Program failed to complete: (?<failedCompleteError>.*)$)|(?<programLog>^^Program log: (?<logMessage>.*)$)|(?<programData>^Program data: (?<data>.*)$)|(?<programConsumed>^Program (?<consumedProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) consumed (?<consumedComputeUnits>\d*) of (?<allComputedUnits>\d*) compute units$)/;
+		/(?<programInvoke>^Program (?<invokeProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) invoke \[(?<level>\d+)\]$)|(?<programSuccessResult>^Program (?<successResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) success$)|(?<programFailedResult>^Program (?<failedResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) failed: (?<failedResultErr>.*)$)|(?<programCompleteFailedResult>^Program failed to complete: (?<failedCompleteError>.*)$)|(?<programLog>^^Program log: (?<logMessage>.*)$)|(?<programData>^Program data: (?<data>.*)$)|(?<programConsumed>^Program (?<consumedProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) consumed (?<consumedComputeUnits>\d*) of (?<allComputedUnits>\d*) compute units$)|(?<programReturn>^Program return: (?<returnProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) (?<returnMessage>.*)$)/;
 	const result: LogContext[] = [];
 	let id = -1;
 	let currentInstruction = 0;
@@ -166,7 +166,7 @@ export function parseLogs(logs: string[]): LogContext[] {
 			const lastProgram = callStack.pop();
 			const lastCallIndex = callIds.pop();
 			if (lastCallIndex === undefined) throw new Error("callIds malformed");
-			if (lastProgram != match.groups.successResultProgramId) throw new Error("callstack mismatch");
+			if (lastProgram != match.groups.successResultProgramId) throw new Error("[ProramSuccess] callstack mismatch");
 			result[lastCallIndex].rawLogs.push(log);
 			currentDepth -= 1;
 			if (currentDepth === 0) {
@@ -174,7 +174,7 @@ export function parseLogs(logs: string[]): LogContext[] {
 			}
 		} else if (match.groups.programFailedResult) {
 			const lastProgram = callStack.pop();
-			if (lastProgram != match.groups.failedResultProgramId) throw new Error("callstack mismatch");
+			if (lastProgram != match.groups.failedResultProgramId) throw new Error("[ProgramFailed] callstack mismatch");
 			result[callIds[callIds.length - 1]].rawLogs.push(log);
 			result[callIds[callIds.length - 1]].errors.push(match.groups.failedResultErr);
 		} else if (match.groups.programCompleteFailedResult) {
@@ -188,6 +188,9 @@ export function parseLogs(logs: string[]): LogContext[] {
 			result[callIds[callIds.length - 1]].dataLogs.push(match.groups.data);
 		} else if (match.groups.programConsumed) {
 			result[callIds[callIds.length - 1]].rawLogs.push(log);
+		} else if (match.groups.programReturn) {
+			if (callStack[callStack.length - 1] != match.groups.returnProgramId) throw new Error("[InvokeReturn]: callstack mismatch");
+			result[callIds[callIds.length - 1]].invokeResult = match.groups.returnMessage;
 		}
 	}
 
