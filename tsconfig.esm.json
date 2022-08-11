@@ -6,6 +6,8 @@
       "target": "es2019",
       "outDir": "dist/esm/",
       "rootDir": "./src",
+      "declaration": false,
+      "declarationMap": false,
     },
     "include": ["src"],
 }

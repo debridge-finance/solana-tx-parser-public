@@ -17,7 +17,6 @@ export default {
 		typescript({
 			tsconfig: "./tsconfig.esm.json",
 			moduleResolution: "node",
-			outDir: "types",
 			target: "es2019",
 			outputToFilesystem: false,
 		}),
