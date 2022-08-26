@@ -1,6 +1,6 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Tool for parsing arbitrary solana transactions with IDL/custom parsers",
   "keywords": [
     "solana",
