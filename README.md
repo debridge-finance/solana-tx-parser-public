@@ -3,6 +3,7 @@
 
 
 ## Table of contents
+  * [Installation](#installation)
   * [What this tool can be used for](#what-this-tool-can-be-used-for)
   * [How To Use](#how-to-use)
     + [Parse by IDL](#parse-by-idl)
@@ -12,6 +13,15 @@
   * [CPI flattening](#cpi-flattening)
   * [Parsing transaction logs](#parsing-transaction-logs)
   * [Using everything together](#using-everything-together)
+
+### Installation
+At the moment we haven't published this package to the NPM. But you can easily use this package in your projects using npm github installation: 
+
+`npm i git+https://github.com/debridge-finance/solana-tx-parser-public`.
+
+Which will produce following line in package.json dependencies section: 
+
+`"@debridge-finance/solana-transaction-parser": "github:debridge-finance/solana-tx-parser-public"`
 
 ### What this tool can be used for
 - Parse solana instructions using anchor IDL/custom parsers.
