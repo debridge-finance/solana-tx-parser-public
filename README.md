@@ -103,10 +103,47 @@ Now we need to init SolanaParser object (which contains different parsers that c
 const parser = new SolanaParser([]);
 parser.addParser(new PublicKey("5wZA8owNKtmfWGBc7rocEXBvTBxMtbpVpkivXNKXNuCV"), customParser);
 ```
+
+*UPD: Since solana devnet transactions become unavailable after some time, here's code that can be used to emit test transactions*
+```ts
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { Wallet } from "@project-serum/anchor";
+
+function echoIx(msg: string, from: PublicKey) {
+	return new TransactionInstruction({
+		programId: new PublicKey("5wZA8owNKtmfWGBc7rocEXBvTBxMtbpVpkivXNKXNuCV"),
+		data: Buffer.concat([Buffer.from([0]), Buffer.from(msg)]),
+		keys: [
+			{ isSigner: true, isWritable: false, pubkey: from },
+			{ isSigner: false, isWritable: false, pubkey: new Keypair().publicKey },
+		],
+	});
+}
+
+function addIx(a: bigint, b: bigint, signer: PublicKey) {
+	const data: Buffer = Buffer.alloc(2 * 8 + 1);
+	data[0] = 1;
+	data.writeBigInt64LE(a, 1);
+	data.writeBigInt64LE(b, 9);
+
+	return new TransactionInstruction({
+		programId: new PublicKey("5wZA8owNKtmfWGBc7rocEXBvTBxMtbpVpkivXNKXNuCV"),
+		data,
+		keys: [
+			{ isSigner: true, isWritable: false, pubkey: signer },
+			{ isSigner: false, isWritable: false, pubkey: new Keypair().publicKey },
+		],
+	});
+}
+
+const tx = new Transaction().add(echoIx("some test msg", kp.publicKey), addIx(555n, 1234n, kp.publicKey));
+// send tx using devnet connection and your wallet
+```
+
 To parse transaction which contains this instructions we only need to call `parseTransaction` method on parser object
 ```ts
 const connection = new Connection(clusterApiUrl("devnet"));
-const parsed = await parser.parseTransaction(connection, "2QU8jyEde9qbvtrYBJJZ2iBubqodmQRSoq2pfomHdGYgTgXwuncappiet8ojGGRdEkzkhW8sXdyfCxwuGHaHYegC");
+const parsed = await parser.parseTransaction(connection, "5xEeZMdrWVG7i8Fbcbu718FtbgSbXsK9c4GPBv21W2e35vP4DdkVghqH4p8dPKdmroUzNe2mBkctm4RAxaVbo78G");
 // check if no errors was produced during parsing
 if (!parsed) throw new Error("failed to get tx/parse!");
 console.log(parsed[0].name); // will print "echo"
