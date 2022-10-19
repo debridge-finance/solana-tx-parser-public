@@ -670,8 +670,8 @@ export class SolanaParser {
      * @param flatten - true if CPI calls need to be parsed too
      * @returns list of parsed instructions
      */
-    async parseTransaction(connection, txId, flatten = false) {
-        const transaction = await connection.getTransaction(txId, { commitment: "confirmed" });
+    async parseTransaction(connection, txId, flatten = false, commitment = "confirmed") {
+        const transaction = await connection.getTransaction(txId, { commitment: commitment });
         if (!transaction)
             return null;
         if (flatten) {
