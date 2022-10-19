@@ -734,7 +734,7 @@ export class SolanaParser {
 	 * @returns list of parsed instructions
 	 */
 	async parseTransaction(connection: Connection, txId: string, flatten: boolean = false): Promise<ParsedInstruction<Idl, string>[] | null> {
-		const transaction = await connection.getTransaction(txId, { commitment: "finalized" });
+		const transaction = await connection.getTransaction(txId, { commitment: "confirmed" });
 		if (!transaction) return null;
 		if (flatten) {
 			const flattened = flattenTransactionResponse(transaction);
