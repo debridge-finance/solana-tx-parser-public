@@ -11,6 +11,7 @@ import {
 	AccountMeta,
 	ParsedMessage,
 	PartiallyDecodedInstruction,
+	Finality,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl, SplToken } from "@project-serum/anchor";
@@ -733,8 +734,8 @@ export class SolanaParser {
 	 * @param flatten - true if CPI calls need to be parsed too
 	 * @returns list of parsed instructions
 	 */
-	async parseTransaction(connection: Connection, txId: string, flatten: boolean = false): Promise<ParsedInstruction<Idl, string>[] | null> {
-		const transaction = await connection.getTransaction(txId, { commitment: "finalized" });
+	async parseTransaction(connection: Connection, txId: string, flatten: boolean = false, commitment: Finality = "confirmed"): Promise<ParsedInstruction<Idl, string>[] | null> {
+		const transaction = await connection.getTransaction(txId, { commitment: commitment });
 		if (!transaction) return null;
 		if (flatten) {
 			const flattened = flattenTransactionResponse(transaction);

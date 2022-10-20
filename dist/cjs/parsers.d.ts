@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Buffer } from "buffer";
-import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, Finality } from "@solana/web3.js";
 import { Idl } from "@project-serum/anchor";
 import { InstructionNames, InstructionParserInfo, ParsedInstruction, ParserFunction, ProgramInfoType } from "./interfaces";
 /**
@@ -65,7 +65,7 @@ export declare class SolanaParser {
      * @param flatten - true if CPI calls need to be parsed too
      * @returns list of parsed instructions
      */
-    parseTransaction(connection: Connection, txId: string, flatten?: boolean): Promise<ParsedInstruction<Idl, string>[] | null>;
+    parseTransaction(connection: Connection, txId: string, flatten?: boolean, commitment?: Finality): Promise<ParsedInstruction<Idl, string>[] | null>;
     /**
      * Parses transaction dump
      * @param txDump base64-encoded string or raw Buffer which contains tx dump
