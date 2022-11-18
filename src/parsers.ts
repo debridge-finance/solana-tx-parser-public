@@ -12,6 +12,8 @@ import {
 	ParsedMessage,
 	PartiallyDecodedInstruction,
 	Finality,
+	VersionedMessage,
+	LoadedAddresses,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl, SplToken } from "@project-serum/anchor";
@@ -702,12 +704,16 @@ export class SolanaParser {
 	/**
 	 * Parses transaction data
 	 * @param txMessage message to parse
+	 * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
 	 * @returns list of parsed instructions
 	 */
-	parseTransactionData(txMessage: Message): ParsedInstruction<Idl, string>[] {
-		const parsedAccounts = parseTransactionAccounts(txMessage);
+	parseTransactionData<T extends Message | VersionedMessage>(
+		txMessage: T,
+		altLoadedAddresses: T extends VersionedMessage ? LoadedAddresses | undefined : undefined = undefined,
+	): ParsedInstruction<Idl, string>[] {
+		const parsedAccounts = parseTransactionAccounts(txMessage, altLoadedAddresses);
 
-		return txMessage.instructions.map((instruction) => this.parseInstruction(compiledInstructionToInstruction(instruction, parsedAccounts)));
+		return txMessage.compiledInstructions.map((instruction) => this.parseInstruction(compiledInstructionToInstruction(instruction, parsedAccounts)));
 	}
 
 	/**
@@ -734,16 +740,21 @@ export class SolanaParser {
 	 * @param flatten - true if CPI calls need to be parsed too
 	 * @returns list of parsed instructions
 	 */
-	async parseTransaction(connection: Connection, txId: string, flatten: boolean = false, commitment: Finality = "confirmed"): Promise<ParsedInstruction<Idl, string>[] | null> {
-		const transaction = await connection.getTransaction(txId, { commitment: commitment });
+	async parseTransaction(
+		connection: Connection,
+		txId: string,
+		flatten: boolean = false,
+		commitment: Finality = "confirmed",
+	): Promise<ParsedInstruction<Idl, string>[] | null> {
+		const transaction = await connection.getTransaction(txId, { commitment: commitment, maxSupportedTransactionVersion: 0 });
 		if (!transaction) return null;
 		if (flatten) {
 			const flattened = flattenTransactionResponse(transaction);
 
-			return flattened.instructions.map((ix) => this.parseInstruction(ix));
+			return flattened.map((ix) => this.parseInstruction(ix));
 		}
 
-		return this.parseTransactionData(transaction.transaction.message);
+		return this.parseTransactionData(transaction.transaction.message, transaction.meta?.loadedAddresses);
 	}
 
 	/**

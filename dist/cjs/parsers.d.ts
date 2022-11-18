@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Buffer } from "buffer";
-import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, Finality } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, Finality, VersionedMessage, LoadedAddresses } from "@solana/web3.js";
 import { Idl } from "@project-serum/anchor";
 import { InstructionNames, InstructionParserInfo, ParsedInstruction, ParserFunction, ProgramInfoType } from "./interfaces";
 /**
@@ -49,9 +49,10 @@ export declare class SolanaParser {
     /**
      * Parses transaction data
      * @param txMessage message to parse
+     * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
      * @returns list of parsed instructions
      */
-    parseTransactionData(txMessage: Message): ParsedInstruction<Idl, string>[];
+    parseTransactionData<T extends Message | VersionedMessage>(txMessage: T, altLoadedAddresses?: T extends VersionedMessage ? LoadedAddresses | undefined : undefined): ParsedInstruction<Idl, string>[];
     /**
      * Parses transaction data retrieved from Connection.getParsedTransaction
      * @param txParsedMessage message to parse

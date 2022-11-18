@@ -644,11 +644,12 @@ export class SolanaParser {
     /**
      * Parses transaction data
      * @param txMessage message to parse
+     * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
      * @returns list of parsed instructions
      */
-    parseTransactionData(txMessage) {
-        const parsedAccounts = parseTransactionAccounts(txMessage);
-        return txMessage.instructions.map((instruction) => this.parseInstruction(compiledInstructionToInstruction(instruction, parsedAccounts)));
+    parseTransactionData(txMessage, altLoadedAddresses = undefined) {
+        const parsedAccounts = parseTransactionAccounts(txMessage, altLoadedAddresses);
+        return txMessage.compiledInstructions.map((instruction) => this.parseInstruction(compiledInstructionToInstruction(instruction, parsedAccounts)));
     }
     /**
      * Parses transaction data retrieved from Connection.getParsedTransaction
@@ -671,14 +672,15 @@ export class SolanaParser {
      * @returns list of parsed instructions
      */
     async parseTransaction(connection, txId, flatten = false, commitment = "confirmed") {
-        const transaction = await connection.getTransaction(txId, { commitment: commitment });
+        var _a;
+        const transaction = await connection.getTransaction(txId, { commitment: commitment, maxSupportedTransactionVersion: 0 });
         if (!transaction)
             return null;
         if (flatten) {
             const flattened = flattenTransactionResponse(transaction);
-            return flattened.instructions.map((ix) => this.parseInstruction(ix));
+            return flattened.map((ix) => this.parseInstruction(ix));
         }
-        return this.parseTransactionData(transaction.transaction.message);
+        return this.parseTransactionData(transaction.transaction.message, (_a = transaction.meta) === null || _a === void 0 ? void 0 : _a.loadedAddresses);
     }
     /**
      * Parses transaction dump

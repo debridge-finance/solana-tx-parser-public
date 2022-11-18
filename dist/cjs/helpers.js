@@ -13,22 +13,26 @@ exports.hexToBuffer = hexToBuffer;
  * @param message transaction message
  * @returns parsed accounts metas
  */
-function parseTransactionAccounts(message) {
-    const accounts = message.accountKeys;
+function parseTransactionAccounts(message, loadedAddresses = undefined) {
+    const accounts = message.version === "legacy" ? message.accountKeys : message.staticAccountKeys;
     const readonlySignedAccountsCount = message.header.numReadonlySignedAccounts;
     const readonlyUnsignedAccountsCount = message.header.numReadonlyUnsignedAccounts;
     const requiredSignaturesAccountsCount = message.header.numRequiredSignatures;
     const totalAccounts = accounts.length;
-    const parsedAccounts = accounts.map((account, idx) => {
-        const isSigner = idx < requiredSignaturesAccountsCount;
+    let parsedAccounts = accounts.map((account, idx) => {
         const isWritable = idx < requiredSignaturesAccountsCount - readonlySignedAccountsCount ||
             (idx >= requiredSignaturesAccountsCount && idx < totalAccounts - readonlyUnsignedAccountsCount);
         return {
-            isSigner,
+            isSigner: idx < requiredSignaturesAccountsCount,
             isWritable,
             pubkey: new web3_js_1.PublicKey(account),
         };
     });
+    const [ALTWritable, ALTReadOnly] = message.version === "legacy" ? [[], []] : loadedAddresses ? [loadedAddresses.writable, loadedAddresses.readonly] : [[], []]; // message.getAccountKeys({ accountKeysFromLookups: loadedAddresses }).keySegments().slice(1); // omit static keys
+    if (ALTWritable)
+        parsedAccounts = [...parsedAccounts, ...ALTWritable.map((pubkey) => ({ isSigner: false, isWritable: true, pubkey }))];
+    if (ALTReadOnly)
+        parsedAccounts = [...parsedAccounts, ...ALTReadOnly.map((pubkey) => ({ isSigner: false, isWritable: false, pubkey }))];
     return parsedAccounts;
 }
 exports.parseTransactionAccounts = parseTransactionAccounts;
@@ -39,11 +43,28 @@ exports.parseTransactionAccounts = parseTransactionAccounts;
  * @returns TransactionInstruction
  */
 function compiledInstructionToInstruction(compiledInstruction, parsedAccounts) {
-    return new web3_js_1.TransactionInstruction({
-        data: anchor_1.utils.bytes.bs58.decode(compiledInstruction.data),
-        programId: parsedAccounts[compiledInstruction.programIdIndex].pubkey,
-        keys: compiledInstruction.accounts.map((accountIdx) => parsedAccounts[accountIdx]),
-    });
+    if (typeof compiledInstruction.data === "string") {
+        const ci = compiledInstruction;
+        return new web3_js_1.TransactionInstruction({
+            data: anchor_1.utils.bytes.bs58.decode(ci.data),
+            programId: parsedAccounts[ci.programIdIndex].pubkey,
+            keys: ci.accounts.map((accountIdx) => parsedAccounts[accountIdx]),
+        });
+    }
+    else {
+        const ci = compiledInstruction;
+        return new web3_js_1.TransactionInstruction({
+            data: Buffer.from(ci.data),
+            programId: parsedAccounts[ci.programIdIndex].pubkey,
+            keys: ci.accountKeyIndexes.map((accountIndex) => {
+                if (accountIndex >= parsedAccounts.length)
+                    throw new Error(`Trying to resolve account at index ${accountIndex} while parsedAccounts is only ${parsedAccounts.length}. \
+						Looks like you're trying to parse versioned transaction, make sure that LoadedAddresses are passed to the \
+						parseTransactionAccounts function`);
+                return parsedAccounts[accountIndex];
+            }),
+        });
+    }
 }
 exports.compiledInstructionToInstruction = compiledInstructionToInstruction;
 function parsedAccountsToMeta(accounts, accountMeta) {
@@ -70,14 +91,14 @@ exports.parsedInstructionToInstruction = parsedInstructionToInstruction;
  * @returns Transaction object
  */
 function flattenTransactionResponse(transaction) {
-    var _a, _b;
-    const result = new web3_js_1.Transaction();
+    var _a, _b, _c;
+    const result = [];
     if (transaction === null || transaction === undefined)
-        return result;
-    const accountsMeta = parseTransactionAccounts(transaction.transaction.message);
-    const orderedCII = (((_a = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _a === void 0 ? void 0 : _a.innerInstructions) || []).sort((a, b) => a.index - b.index);
-    const totalCalls = (((_b = transaction.meta) === null || _b === void 0 ? void 0 : _b.innerInstructions) || []).reduce((accumulator, cii) => accumulator + cii.instructions.length, 0) +
-        transaction.transaction.message.instructions.length;
+        return [];
+    const txInstructions = transaction.transaction.message.compiledInstructions;
+    const accountsMeta = parseTransactionAccounts(transaction.transaction.message, (_a = transaction.meta) === null || _a === void 0 ? void 0 : _a.loadedAddresses);
+    const orderedCII = (((_b = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _b === void 0 ? void 0 : _b.innerInstructions) || []).sort((a, b) => a.index - b.index);
+    const totalCalls = (((_c = transaction.meta) === null || _c === void 0 ? void 0 : _c.innerInstructions) || []).reduce((accumulator, cii) => accumulator + cii.instructions.length, 0) + txInstructions.length;
     let lastPushedIx = -1;
     let callIndex = -1;
     for (const CII of orderedCII) {
@@ -85,17 +106,17 @@ function flattenTransactionResponse(transaction) {
         while (lastPushedIx !== CII.index) {
             lastPushedIx += 1;
             callIndex += 1;
-            result.add(compiledInstructionToInstruction(transaction.transaction.message.instructions[lastPushedIx], accountsMeta));
+            result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
         }
         for (const CIIEntry of CII.instructions) {
-            result.add(compiledInstructionToInstruction(CIIEntry, accountsMeta));
+            result.push(compiledInstructionToInstruction(CIIEntry, accountsMeta));
             callIndex += 1;
         }
     }
     while (callIndex < totalCalls - 1) {
         lastPushedIx += 1;
         callIndex += 1;
-        result.add(compiledInstructionToInstruction(transaction.transaction.message.instructions[lastPushedIx], accountsMeta));
+        result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
     }
     return result;
 }
