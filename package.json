@@ -1,28 +1,23 @@
 {
-  "name": "@debridge-finance/solana-transaction-parser",
+  "name": "@shyft/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
   "version": "1.1.0",
-  "author": "deBridge",
+  "author": "shyft",
   "license": "LGPL-2.1",
-  "homepage": "https://debridge.finance",
+  "homepage": "https://shyft.to/",
   "repository": {
     "type": "git",
-    "url": "github:debridge-finance/solana-tx-parser-public"
+    "url": "git@github.com:Shyft-to/solana-tx-parser-public.git"
   },
-
   "keywords": [
-    "solana",
-    "deBridge",
-    "blockchain"
+    "shyft"
   ],
-
   "files": [
     "dist/**",
     "docs/**",
     "LICENSE",
     "README.md"
   ],
-
   "browser": "./dist/browser/index.js",
   "module": "./dist/esm/index.js",
   "main": "./dist/cjs/index.js",
