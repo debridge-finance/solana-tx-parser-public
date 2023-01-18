@@ -4,7 +4,7 @@ import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@so
 /**
  * Context of logs for specific instruction
  */
-export declare type LogContext = {
+export type LogContext = {
     rawLogs: string[];
     errors: string[];
     logMessages: string[];
@@ -15,22 +15,22 @@ export declare type LogContext = {
     instructionIndex: number;
     invokeResult?: string;
 };
-export declare type TransactionWithLogs = {
+export type TransactionWithLogs = {
     logs?: string[];
     transaction: Transaction;
 };
 /**
  * Map which keys are programIds (base58-encoded) and values are ix parsers
  */
-export declare type InstructionParsers = Map<string, ParserFunction<Idl, string>>;
+export type InstructionParsers = Map<string, ParserFunction<Idl, string>>;
 /**
  * Function that takes transaction ix and returns parsed variant
  */
-export declare type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = (arg: TransactionInstruction) => ParsedInstruction<I, IxName>;
+export type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = (arg: TransactionInstruction) => ParsedInstruction<I, IxName>;
 /**
  * public key as base58 string, parser
  */
-export declare type InstructionParserInfo = [string, ParserFunction<Idl, string>];
+export type InstructionParserInfo = [string, ParserFunction<Idl, string>];
 export interface ParsedAccount extends AccountMeta {
     /** Account name, same as in Idl, nested accounts look like `account > nestedAccount` */
     name?: string;
@@ -38,17 +38,17 @@ export interface ParsedAccount extends AccountMeta {
 /**
  * Instructions args with correct types for specific instruction by instruction name
  */
-export declare type ParsedIdlArgsByInstructionName<I extends Idl, Ix extends I["instructions"][number]> = {
+export type ParsedIdlArgsByInstructionName<I extends Idl, Ix extends I["instructions"][number]> = {
     [ArgName in Ix["args"][number]["name"]]: DecodeType<(Ix["args"][number] & {
         name: ArgName;
     })["type"], IdlTypes<I>>;
 };
-export declare type InstructionNames<I extends Idl> = I["instructions"][number]["name"];
-export declare type ParsedIdlArgs<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = ParsedIdlArgsByInstructionName<I, IxByName<I, IxName>>;
-export declare type ParsedArgs = {
+export type InstructionNames<I extends Idl> = I["instructions"][number]["name"];
+export type ParsedIdlArgs<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = ParsedIdlArgsByInstructionName<I, IxByName<I, IxName>>;
+export type ParsedArgs = {
     [key: string]: unknown;
 };
-export declare type UnknownInstruction = {
+export type UnknownInstruction = {
     name: "unknown" | string;
     args: {
         unknown: unknown;
@@ -56,7 +56,7 @@ export declare type UnknownInstruction = {
     accounts: ParsedAccount[];
     programId: PublicKey;
 };
-export declare type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = UnknownInstruction | ParsedIdlInstruction<I, IxName> | ParsedCustomInstruction;
+export type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = UnknownInstruction | ParsedIdlInstruction<I, IxName> | ParsedCustomInstruction;
 export interface ParsedCustomInstruction {
     /** Instruction name */
     name: string;
@@ -82,7 +82,7 @@ export interface ProgramInfoType {
 /**
  * @private
  */
-declare type TypeMap = {
+type TypeMap = {
     publicKey: PublicKey;
     bool: boolean;
     string: string;
@@ -91,11 +91,11 @@ declare type TypeMap = {
 } & {
     [K in "u64" | "i64" | "u128" | "i128"]: BN;
 };
-declare type IdlType = Idl["instructions"][number]["args"][number]["type"];
+type IdlType = Idl["instructions"][number]["args"][number]["type"];
 /**
  * @private
  */
-export declare type DecodeType<T extends IdlType, Defined> = T extends keyof TypeMap ? TypeMap[T] : T extends {
+export type DecodeType<T extends IdlType, Defined> = T extends keyof TypeMap ? TypeMap[T] : T extends {
     defined: keyof Defined;
 } ? Defined[T["defined"]] : T extends {
     option: {
@@ -113,26 +113,26 @@ export declare type DecodeType<T extends IdlType, Defined> = T extends keyof Typ
 /**
  * Interface to get instruction by name from IDL
  */
-export declare type IxByName<I extends Idl, IxName extends I["instructions"][number]["name"]> = I["instructions"][number] & {
+export type IxByName<I extends Idl, IxName extends I["instructions"][number]["name"]> = I["instructions"][number] & {
     name: IxName;
 };
-export declare type IdlAccount = {
+export type IdlAccount = {
     name: string;
     isMut: boolean;
     isSigner: boolean;
 };
-export declare type IdlAccounts = {
+export type IdlAccounts = {
     name: string;
     accounts: IdlAccount[];
 };
 /**
  * @private
  */
-export declare type IdlAccountItem = IdlAccounts | IdlAccount;
+export type IdlAccountItem = IdlAccounts | IdlAccount;
 /**
  * @private
  */
-export declare type AssociatedTokenProgramIdlLike = {
+export type AssociatedTokenProgramIdlLike = {
     name: "associated_token_program";
     version: "1.0.3";
     instructions: [
