@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { AccountMeta, CompiledInstruction, LoadedAddresses, Message, MessageCompiledInstruction, PartiallyDecodedInstruction, TransactionInstruction, VersionedMessage, VersionedTransactionResponse } from "@solana/web3.js";
+import { AccountMeta, CompiledInstruction, LoadedAddresses, Message, MessageCompiledInstruction, ParsedInstruction as SolanaParsedInstruction, ParsedTransactionWithMeta, PartiallyDecodedInstruction, PublicKey, TransactionInstruction, VersionedMessage, VersionedTransactionResponse } from "@solana/web3.js";
 import { LogContext } from "./interfaces";
 export declare function hexToBuffer(data: string): Buffer;
 /**
@@ -21,7 +21,12 @@ export declare function parsedInstructionToInstruction(parsedInstruction: Partia
  * @param transaction transactionResponse to convert from
  * @returns Transaction object
  */
-export declare function flattenTransactionResponse(transaction: VersionedTransactionResponse): TransactionInstruction[];
+export declare function flattenTransactionResponse(transaction: VersionedTransactionResponse): (TransactionInstruction & {
+    parentProgramId?: PublicKey;
+})[];
+export declare function flattenParsedTransaction(transaction: ParsedTransactionWithMeta): ((SolanaParsedInstruction | PartiallyDecodedInstruction) & {
+    parentProgramId?: PublicKey;
+})[];
 /**
  * Parses transaction logs and provides additional context such as
  * - programId that generated the message

@@ -102,7 +102,11 @@ export function flattenTransactionResponse(transaction) {
             result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
         }
         for (const CIIEntry of CII.instructions) {
-            result.push(compiledInstructionToInstruction(CIIEntry, accountsMeta));
+            const parentProgramId = accountsMeta[txInstructions[lastPushedIx].programIdIndex].pubkey;
+            result.push({
+                ...compiledInstructionToInstruction(CIIEntry, accountsMeta),
+                parentProgramId,
+            });
             callIndex += 1;
         }
     }
@@ -110,6 +114,40 @@ export function flattenTransactionResponse(transaction) {
         lastPushedIx += 1;
         callIndex += 1;
         result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
+    }
+    return result;
+}
+export function flattenParsedTransaction(transaction) {
+    var _a, _b;
+    const result = [];
+    if (!transaction) {
+        return result;
+    }
+    const txInstructions = transaction.transaction.message.instructions;
+    const orderedCII = (((_a = transaction === null || transaction === void 0 ? void 0 : transaction.meta) === null || _a === void 0 ? void 0 : _a.innerInstructions) || []).sort((a, b) => a.index - b.index);
+    const totalCalls = (((_b = transaction.meta) === null || _b === void 0 ? void 0 : _b.innerInstructions) || []).reduce((accumulator, cii) => accumulator + cii.instructions.length, 0) + txInstructions.length;
+    let lastPushedIx = -1;
+    let callIndex = -1;
+    for (const CII of orderedCII) {
+        // push original instructions until we meet CPI
+        while (lastPushedIx !== CII.index) {
+            lastPushedIx += 1;
+            callIndex += 1;
+            result.push(txInstructions[lastPushedIx]);
+        }
+        for (const CIIEntry of CII.instructions) {
+            const parentProgramId = txInstructions[lastPushedIx].programId;
+            result.push({
+                ...CIIEntry,
+                parentProgramId,
+            });
+            callIndex += 1;
+        }
+    }
+    while (callIndex < totalCalls - 1) {
+        lastPushedIx += 1;
+        callIndex += 1;
+        result.push(txInstructions[lastPushedIx]);
     }
     return result;
 }

@@ -10,10 +10,13 @@ import {
 	Transaction,
 	AccountMeta,
 	ParsedMessage,
+	ParsedInstruction as SolanaParsedInstruction,
 	PartiallyDecodedInstruction,
 	Finality,
 	VersionedMessage,
 	LoadedAddresses,
+	VersionedTransactionResponse,
+	ParsedTransactionWithMeta,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl, SplToken } from "@project-serum/anchor";
@@ -34,7 +37,13 @@ import {
 	ProgramInfoType,
 	UnknownInstruction,
 } from "./interfaces";
-import { compiledInstructionToInstruction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts } from "./helpers";
+import {
+	compiledInstructionToInstruction,
+	flattenParsedTransaction,
+	flattenTransactionResponse,
+	parsedInstructionToInstruction,
+	parseTransactionAccounts,
+} from "./helpers";
 
 function decodeSystemInstruction(instruction: TransactionInstruction): ParsedInstruction<SystemProgramIdl> {
 	const ixType = SystemInstruction.decodeInstructionType(instruction);
@@ -661,7 +670,7 @@ export class SolanaParser {
 					name: parsedIx.name,
 					accounts,
 					programId: instruction.programId,
-					args: parsedIx.data as ParsedIdlArgs<typeof idl, typeof idl["instructions"][number]["name"]>, // as IxArgsMap<typeof idl, typeof idl["instructions"][number]["name"]>,
+					args: parsedIx.data as ParsedIdlArgs<typeof idl, (typeof idl)["instructions"][number]["name"]>, // as IxArgsMap<typeof idl, typeof idl["instructions"][number]["name"]>,
 				};
 			}
 		};
@@ -702,6 +711,24 @@ export class SolanaParser {
 	}
 
 	/**
+	 * Parses transaction data along with inner instructions
+	 * @param tx response to parse
+	 * @returns list of parsed instructions
+	 */
+	parseTransactionWithInnerInstructions<T extends VersionedTransactionResponse>(tx: T): ParsedInstruction<Idl, string>[] {
+		const flattened = flattenTransactionResponse(tx);
+
+		return flattened.map(({ parentProgramId, ...ix }) => {
+			const parsedIx = this.parseInstruction(ix);
+			if (parentProgramId) {
+				parsedIx.parentProgramId = parentProgramId;
+			}
+
+			return parsedIx;
+		});
+	}
+
+	/**
 	 * Parses transaction data
 	 * @param txMessage message to parse
 	 * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
@@ -731,6 +758,45 @@ export class SolanaParser {
 		return txParsedMessage.instructions.map((parsedIx) =>
 			this.parseInstruction(parsedInstructionToInstruction(parsedIx as PartiallyDecodedInstruction, parsedAccounts)),
 		);
+	}
+
+	/**
+	 * Parses transaction data retrieved from Connection.getParsedTransaction along with the inner instructions
+	 * @param txParsedMessage message to parse
+	 * @returns list of parsed instructions
+	 */
+	parseParsedTransactionWithInnerInstructions(txn: ParsedTransactionWithMeta): ParsedInstruction<Idl, string>[] {
+		const allInstructions = flattenParsedTransaction(txn);
+		const parsedAccounts = txn.transaction.message.accountKeys.map((metaLike) => ({
+			isSigner: metaLike.signer,
+			isWritable: metaLike.writable,
+			pubkey: metaLike.pubkey,
+		}));
+
+		return allInstructions.map(({ parentProgramId, ...instruction }) => {
+			let parsedIns: ParsedInstruction<Idl, string>;
+			if ("data" in instruction) {
+				parsedIns = this.parseInstruction(parsedInstructionToInstruction(instruction, parsedAccounts));
+			} else {
+				parsedIns = this.convertSolanaParsedInstruction(instruction);
+			}
+
+			if (parentProgramId) {
+				parsedIns.parentProgramId = parentProgramId;
+			}
+
+			return parsedIns;
+		});
+	}
+
+	convertSolanaParsedInstruction(instruction: SolanaParsedInstruction): ParsedInstruction<Idl, string> {
+		const parsed = instruction.parsed as { type: string; info: unknown };
+
+		return {
+			name: parsed.type,
+			programId: instruction.programId,
+			info: parsed.info,
+		};
 	}
 
 	/**

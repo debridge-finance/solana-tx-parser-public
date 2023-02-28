@@ -646,6 +646,21 @@ class SolanaParser {
         }
     }
     /**
+     * Parses transaction data along with inner instructions
+     * @param tx response to parse
+     * @returns list of parsed instructions
+     */
+    parseTransactionWithInnerInstructions(tx) {
+        const flattened = (0, helpers_1.flattenTransactionResponse)(tx);
+        return flattened.map(({ parentProgramId, ...ix }) => {
+            const parsedIx = this.parseInstruction(ix);
+            if (parentProgramId) {
+                parsedIx.parentProgramId = parentProgramId;
+            }
+            return parsedIx;
+        });
+    }
+    /**
      * Parses transaction data
      * @param txMessage message to parse
      * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
@@ -667,6 +682,40 @@ class SolanaParser {
             pubkey: metaLike.pubkey,
         }));
         return txParsedMessage.instructions.map((parsedIx) => this.parseInstruction((0, helpers_1.parsedInstructionToInstruction)(parsedIx, parsedAccounts)));
+    }
+    /**
+     * Parses transaction data retrieved from Connection.getParsedTransaction along with the inner instructions
+     * @param txParsedMessage message to parse
+     * @returns list of parsed instructions
+     */
+    parseParsedTransactionWithInnerInstructions(txn) {
+        const allInstructions = (0, helpers_1.flattenParsedTransaction)(txn);
+        const parsedAccounts = txn.transaction.message.accountKeys.map((metaLike) => ({
+            isSigner: metaLike.signer,
+            isWritable: metaLike.writable,
+            pubkey: metaLike.pubkey,
+        }));
+        return allInstructions.map(({ parentProgramId, ...instruction }) => {
+            let parsedIns;
+            if ("data" in instruction) {
+                parsedIns = this.parseInstruction((0, helpers_1.parsedInstructionToInstruction)(instruction, parsedAccounts));
+            }
+            else {
+                parsedIns = this.convertSolanaParsedInstruction(instruction);
+            }
+            if (parentProgramId) {
+                parsedIns.parentProgramId = parentProgramId;
+            }
+            return parsedIns;
+        });
+    }
+    convertSolanaParsedInstruction(instruction) {
+        const parsed = instruction.parsed;
+        return {
+            name: parsed.type,
+            programId: instruction.programId,
+            info: parsed.info,
+        };
     }
     /**
      * Fetches tx from blockchain and parses it

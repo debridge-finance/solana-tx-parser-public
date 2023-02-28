@@ -55,12 +55,20 @@ export type UnknownInstruction = {
     };
     accounts: ParsedAccount[];
     programId: PublicKey;
+    parentProgramId?: PublicKey;
 };
-export type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = UnknownInstruction | ParsedIdlInstruction<I, IxName> | ParsedCustomInstruction;
+export type ParsedInstruction<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = UnknownInstruction | DefaultParsedInstruction | ParsedIdlInstruction<I, IxName> | ParsedCustomInstruction;
+export type DefaultParsedInstruction = {
+    name: string;
+    programId: PublicKey;
+    parentProgramId?: PublicKey;
+    info: unknown;
+};
 export interface ParsedCustomInstruction {
     /** Instruction name */
     name: string;
     programId: PublicKey;
+    parentProgramId?: PublicKey;
     /** Parsed arguments */
     args: unknown;
     /** Parsed accounts */
@@ -70,6 +78,7 @@ export interface ParsedIdlInstruction<I extends Idl, IxName extends InstructionN
     /** Instruction name */
     name: IxName;
     programId: PublicKey;
+    parentProgramId?: PublicKey;
     /** Parsed arguments */
     args: ParsedIdlArgs<I, IxName>;
     /** Parsed accounts */

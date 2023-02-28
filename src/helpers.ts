@@ -5,6 +5,8 @@ import {
 	LoadedAddresses,
 	Message,
 	MessageCompiledInstruction,
+	ParsedInstruction as SolanaParsedInstruction,
+	ParsedTransactionWithMeta,
 	PartiallyDecodedInstruction,
 	PublicKey,
 	TransactionInstruction,
@@ -116,8 +118,8 @@ export function parsedInstructionToInstruction(parsedInstruction: PartiallyDecod
  * @param transaction transactionResponse to convert from
  * @returns Transaction object
  */
-export function flattenTransactionResponse(transaction: VersionedTransactionResponse): TransactionInstruction[] {
-	const result: TransactionInstruction[] = [];
+export function flattenTransactionResponse(transaction: VersionedTransactionResponse): (TransactionInstruction & { parentProgramId?: PublicKey })[] {
+	const result: (TransactionInstruction & { parentProgramId?: PublicKey })[] = [];
 	if (transaction === null || transaction === undefined) return [];
 	const txInstructions = transaction.transaction.message.compiledInstructions;
 	const accountsMeta = parseTransactionAccounts(transaction.transaction.message, transaction.meta?.loadedAddresses);
@@ -134,7 +136,11 @@ export function flattenTransactionResponse(transaction: VersionedTransactionResp
 			result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
 		}
 		for (const CIIEntry of CII.instructions) {
-			result.push(compiledInstructionToInstruction(CIIEntry, accountsMeta));
+			const parentProgramId = accountsMeta[txInstructions[lastPushedIx].programIdIndex].pubkey;
+			result.push({
+				...compiledInstructionToInstruction(CIIEntry, accountsMeta),
+				parentProgramId,
+			});
 			callIndex += 1;
 		}
 	}
@@ -142,6 +148,46 @@ export function flattenTransactionResponse(transaction: VersionedTransactionResp
 		lastPushedIx += 1;
 		callIndex += 1;
 		result.push(compiledInstructionToInstruction(txInstructions[lastPushedIx], accountsMeta));
+	}
+
+	return result;
+}
+
+export function flattenParsedTransaction(
+	transaction: ParsedTransactionWithMeta,
+): ((SolanaParsedInstruction | PartiallyDecodedInstruction) & { parentProgramId?: PublicKey })[] {
+	const result: ((SolanaParsedInstruction | PartiallyDecodedInstruction) & { parentProgramId?: PublicKey })[] = [];
+
+	if (!transaction) {
+		return result;
+	}
+
+	const txInstructions = transaction.transaction.message.instructions;
+	const orderedCII = (transaction?.meta?.innerInstructions || []).sort((a, b) => a.index - b.index);
+	const totalCalls =
+		(transaction.meta?.innerInstructions || []).reduce((accumulator, cii) => accumulator + cii.instructions.length, 0) + txInstructions.length;
+	let lastPushedIx = -1;
+	let callIndex = -1;
+	for (const CII of orderedCII) {
+		// push original instructions until we meet CPI
+		while (lastPushedIx !== CII.index) {
+			lastPushedIx += 1;
+			callIndex += 1;
+			result.push(txInstructions[lastPushedIx]);
+		}
+		for (const CIIEntry of CII.instructions) {
+			const parentProgramId = txInstructions[lastPushedIx].programId;
+			result.push({
+				...CIIEntry,
+				parentProgramId,
+			});
+			callIndex += 1;
+		}
+	}
+	while (callIndex < totalCalls - 1) {
+		lastPushedIx += 1;
+		callIndex += 1;
+		result.push(txInstructions[lastPushedIx]);
 	}
 
 	return result;

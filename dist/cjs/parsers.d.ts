@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Buffer } from "buffer";
-import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, Finality, VersionedMessage, LoadedAddresses } from "@solana/web3.js";
+import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, ParsedInstruction as SolanaParsedInstruction, Finality, VersionedMessage, LoadedAddresses, VersionedTransactionResponse, ParsedTransactionWithMeta } from "@solana/web3.js";
 import { Idl } from "@project-serum/anchor";
 import { InstructionNames, InstructionParserInfo, ParsedInstruction, ParserFunction, ProgramInfoType } from "./interfaces";
 /**
@@ -47,6 +47,12 @@ export declare class SolanaParser {
      */
     parseInstruction<I extends Idl, IxName extends InstructionNames<I>>(instruction: TransactionInstruction): ParsedInstruction<I, IxName>;
     /**
+     * Parses transaction data along with inner instructions
+     * @param tx response to parse
+     * @returns list of parsed instructions
+     */
+    parseTransactionWithInnerInstructions<T extends VersionedTransactionResponse>(tx: T): ParsedInstruction<Idl, string>[];
+    /**
      * Parses transaction data
      * @param txMessage message to parse
      * @param altLoadedAddresses VersionedTransaction.meta.loaddedAddresses if tx is versioned
@@ -59,6 +65,13 @@ export declare class SolanaParser {
      * @returns list of parsed instructions
      */
     parseTransactionParsedData(txParsedMessage: ParsedMessage): ParsedInstruction<Idl, string>[];
+    /**
+     * Parses transaction data retrieved from Connection.getParsedTransaction along with the inner instructions
+     * @param txParsedMessage message to parse
+     * @returns list of parsed instructions
+     */
+    parseParsedTransactionWithInnerInstructions(txn: ParsedTransactionWithMeta): ParsedInstruction<Idl, string>[];
+    convertSolanaParsedInstruction(instruction: SolanaParsedInstruction): ParsedInstruction<Idl, string>;
     /**
      * Fetches tx from blockchain and parses it
      * @param connection web3 Connection
