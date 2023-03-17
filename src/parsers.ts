@@ -45,6 +45,8 @@ import {
 	parseTransactionAccounts,
 } from "./helpers";
 
+const MEMO_PROGRAM_V2 = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+
 function decodeSystemInstruction(instruction: TransactionInstruction): ParsedInstruction<SystemProgramIdl> {
 	const ixType = SystemInstruction.decodeInstructionType(instruction);
 	let parsed: ParsedIdlInstruction<SystemProgramIdl> | null;
@@ -791,6 +793,14 @@ export class SolanaParser {
 
 	convertSolanaParsedInstruction(instruction: SolanaParsedInstruction): ParsedInstruction<Idl, string> {
 		const parsed = instruction.parsed as { type: string; info: unknown };
+
+		if (instruction.programId.toBase58() === MEMO_PROGRAM_V2) {
+			return {
+				name: "Memo",
+				programId: instruction.programId,
+				info: { message: parsed },
+			};
+		}
 
 		return {
 			name: parsed.type,
