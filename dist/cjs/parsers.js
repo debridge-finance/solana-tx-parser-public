@@ -8,6 +8,8 @@ const spl = tslib_1.__importStar(require("@solana/spl-token"));
 const anchor_1 = require("@project-serum/anchor");
 const buffer_layout_1 = require("@solana/buffer-layout");
 const helpers_1 = require("./helpers");
+const MEMO_PROGRAM_V1 = "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo";
+const MEMO_PROGRAM_V2 = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 function decodeSystemInstruction(instruction) {
     const ixType = web3_js_1.SystemInstruction.decodeInstructionType(instruction);
     let parsed;
@@ -711,10 +713,20 @@ class SolanaParser {
     }
     convertSolanaParsedInstruction(instruction) {
         const parsed = instruction.parsed;
+        const pId = instruction.programId.toBase58();
+        if (pId === MEMO_PROGRAM_V2 || pId === MEMO_PROGRAM_V1) {
+            return {
+                name: "Memo",
+                programId: instruction.programId,
+                args: { message: parsed },
+                accounts: [],
+            };
+        }
         return {
             name: parsed.type,
             programId: instruction.programId,
-            info: parsed.info,
+            args: parsed.info,
+            accounts: [],
         };
     }
     /**

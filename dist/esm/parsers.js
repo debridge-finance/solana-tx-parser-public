@@ -4,6 +4,8 @@ import * as spl from "@solana/spl-token";
 import { BN, BorshInstructionCoder } from "@project-serum/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
 import { compiledInstructionToInstruction, flattenParsedTransaction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts, } from "./helpers";
+const MEMO_PROGRAM_V1 = "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo";
+const MEMO_PROGRAM_V2 = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 function decodeSystemInstruction(instruction) {
     const ixType = SystemInstruction.decodeInstructionType(instruction);
     let parsed;
@@ -707,10 +709,20 @@ export class SolanaParser {
     }
     convertSolanaParsedInstruction(instruction) {
         const parsed = instruction.parsed;
+        const pId = instruction.programId.toBase58();
+        if (pId === MEMO_PROGRAM_V2 || pId === MEMO_PROGRAM_V1) {
+            return {
+                name: "Memo",
+                programId: instruction.programId,
+                args: { message: parsed },
+                accounts: [],
+            };
+        }
         return {
             name: parsed.type,
             programId: instruction.programId,
-            info: parsed.info,
+            args: parsed.info,
+            accounts: [],
         };
     }
     /**

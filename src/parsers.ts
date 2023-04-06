@@ -46,6 +46,7 @@ import {
 	parseTransactionAccounts,
 } from "./helpers";
 
+const MEMO_PROGRAM_V1 = "Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo";
 const MEMO_PROGRAM_V2 = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 
 function decodeSystemInstruction(instruction: TransactionInstruction): ParsedInstruction<SystemProgramIdl> {
@@ -795,18 +796,21 @@ export class SolanaParser {
 	convertSolanaParsedInstruction(instruction: SolanaParsedInstruction): ParsedInstruction<Idl, string> {
 		const parsed = instruction.parsed as { type: string; info: unknown };
 
-		if (instruction.programId.toBase58() === MEMO_PROGRAM_V2) {
+		const pId = instruction.programId.toBase58();
+		if (pId === MEMO_PROGRAM_V2 || pId === MEMO_PROGRAM_V1) {
 			return {
 				name: "Memo",
 				programId: instruction.programId,
-				info: { message: parsed },
+				args: { message: parsed },
+				accounts: [],
 			};
 		}
 
 		return {
 			name: parsed.type,
 			programId: instruction.programId,
-			info: parsed.info,
+			args: parsed.info,
+			accounts: [],
 		};
 	}
 
