@@ -708,9 +708,19 @@ export class SolanaParser {
 		if (!this.instructionParsers.has(instruction.programId.toBase58())) {
 			return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
 		} else {
-			const parser = this.instructionParsers.get(instruction.programId.toBase58()) as ParserFunction<I, IxName>;
+			try {
+				const parser = this.instructionParsers.get(instruction.programId.toBase58()) as ParserFunction<I, IxName>;
 
-			return parser(instruction);
+				return parser(instruction);
+			} catch (error) {
+				// eslint-disable-next-line no-console
+				console.error("Parser does not matching the instruction args", {
+					programId: instruction.programId.toBase58(),
+					instructionData: instruction.data.toString("hex"),
+				});
+
+				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
+			}
 		}
 	}
 
