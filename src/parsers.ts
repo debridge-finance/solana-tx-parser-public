@@ -588,7 +588,7 @@ function flattenIdlAccounts(accounts: IdlAccountItem[], prefix?: string): IdlAcc
  */
 export class SolanaParser {
 	private instructionParsers: InstructionParsers;
-
+	private instructionDecoders: Map<PublicKey | string, BorshInstructionCoder>;
 	/**
 	 * Initializes parser object
 	 * `SystemProgram`, `TokenProgram` and `AssociatedTokenProgram` are supported by default
@@ -597,7 +597,8 @@ export class SolanaParser {
 	 * @param parsers list of pairs (programId, custom parser)
 	 */
 	constructor(programInfos: ProgramInfoType[], parsers?: InstructionParserInfo[]) {
-		const standartParsers: InstructionParserInfo[] = [
+		this.instructionDecoders = new Map();
+		const standardParsers: InstructionParserInfo[] = [
 			[SystemProgram.programId.toBase58(), decodeSystemInstruction],
 			[spl.TOKEN_PROGRAM_ID.toBase58(), decodeTokenInstruction],
 			[spl.ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), decodeAssociatedTokenInstruction],
@@ -605,16 +606,16 @@ export class SolanaParser {
 		let result: InstructionParsers;
 		parsers = parsers || [];
 		for (const programInfo of programInfos) {
-			parsers.push(this.buildIdlParser(new PublicKey(programInfo.programId), programInfo.idl));
+			this.addParserFromIdl(new PublicKey(programInfo.programId), programInfo.idl);
 		}
 
 		if (!parsers) {
-			result = new Map(standartParsers);
+			result = new Map(standardParsers);
 		} else {
 			// first set provided parsers
 			result = new Map(parsers);
 			// append standart parsers if parser not exist yet
-			for (const parserInfo of standartParsers) {
+			for (const parserInfo of standardParsers) {
 				if (!result.has(parserInfo[0])) {
 					result.set(...parserInfo);
 				}
@@ -639,13 +640,13 @@ export class SolanaParser {
 	 * @param idl IDL that describes anchor program
 	 */
 	addParserFromIdl(programId: PublicKey | string, idl: Idl) {
-		this.instructionParsers.set(...this.buildIdlParser(new PublicKey(programId), idl));
+		this.instructionDecoders.set(programId, new BorshInstructionCoder(idl));
+		this.instructionParsers.set(...this.buildIdlParser(programId, idl));
 	}
 
-	private buildIdlParser(programId: PublicKey, idl: Idl): InstructionParserInfo {
-		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl>> = (instruction: TransactionInstruction) => {
-			const coder = new BorshInstructionCoder(idl);
-			const parsedIx = coder.decode(instruction.data);
+	private buildIdlParser(programId: PublicKey | string, idl: Idl): InstructionParserInfo {
+		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl>> = (instruction: TransactionInstruction, decoder: BorshInstructionCoder) => {
+			const parsedIx = decoder?.decode(instruction.data);
 			if (!parsedIx) {
 				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
 			} else {
@@ -679,7 +680,7 @@ export class SolanaParser {
 			}
 		};
 
-		return [programId.toBase58(), idlParser.bind(this)];
+		return [programId, idlParser.bind(this)];
 	}
 
 	/**
@@ -710,8 +711,9 @@ export class SolanaParser {
 		} else {
 			try {
 				const parser = this.instructionParsers.get(instruction.programId.toBase58()) as ParserFunction<I, IxName>;
+				const decoder = this.instructionDecoders.get(instruction.programId.toBase58()) as BorshInstructionCoder;
 
-				return parser(instruction);
+				return parser(instruction, decoder);
 			} catch (error) {
 				// eslint-disable-next-line no-console
 				console.error("Parser does not matching the instruction args", {

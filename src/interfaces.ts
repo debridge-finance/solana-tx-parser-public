@@ -1,4 +1,4 @@
-import { BN, Idl, IdlTypes } from "@project-serum/anchor";
+import { BN, BorshInstructionCoder, Idl, IdlTypes } from "@project-serum/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
 /**
@@ -24,16 +24,16 @@ export type TransactionWithLogs = {
 /**
  * Map which keys are programIds (base58-encoded) and values are ix parsers
  */
-export type InstructionParsers = Map<string, ParserFunction<Idl, string>>;
+export type InstructionParsers = Map<PublicKey | string, ParserFunction<Idl, string>>;
 /**
  * Function that takes transaction ix and returns parsed variant
  */
-export type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = (arg: TransactionInstruction) => ParsedInstruction<I, IxName>;
+export type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = (arg: TransactionInstruction, decoder: BorshInstructionCoder) => ParsedInstruction<I, IxName>;
 
 /**
  * public key as base58 string, parser
  */
-export type InstructionParserInfo = [string, ParserFunction<Idl, string>];
+export type InstructionParserInfo = [PublicKey | string, ParserFunction<Idl, string>];
 
 export interface ParsedAccount extends AccountMeta {
 	/** Account name, same as in Idl, nested accounts look like `account > nestedAccount` */
