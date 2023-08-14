@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { Buffer } from "buffer";
 import { PublicKey, TransactionInstruction, Connection, Message, ParsedMessage, Finality, VersionedMessage, LoadedAddresses } from "@solana/web3.js";
-import { Idl } from "@project-serum/anchor";
+import { Idl } from "@coral-xyz/anchor";
 import { InstructionNames, InstructionParserInfo, ParsedInstruction, ParserFunction, ProgramInfoType } from "./interfaces";
 /**
  * Class for parsing arbitrary solana transactions in various formats

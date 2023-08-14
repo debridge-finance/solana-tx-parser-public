@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseLogs = exports.flattenTransactionResponse = exports.parsedInstructionToInstruction = exports.compiledInstructionToInstruction = exports.parseTransactionAccounts = exports.hexToBuffer = void 0;
-const anchor_1 = require("@project-serum/anchor");
+const anchor_1 = require("@coral-xyz/anchor");
 const web3_js_1 = require("@solana/web3.js");
 function hexToBuffer(data) {
     const rawHex = data.startsWith("0x") ? data.slice(2) : data;

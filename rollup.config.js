@@ -22,7 +22,7 @@ export default {
 		}),
 		terser(),
 	],
-	external: ["@solana/web3.js", "@project-serum/anchor"],
+	external: ["@solana/web3.js", "@coral-xyz/anchor"],
 	output: {
 		file: "dist/browser/index.js",
 		format: "es",

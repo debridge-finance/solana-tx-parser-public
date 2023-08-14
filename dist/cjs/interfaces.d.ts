@@ -1,6 +1,8 @@
 /// <reference types="bn.js" />
-import { BN, Idl, IdlTypes } from "@project-serum/anchor";
+import { splTokenProgram } from "@coral-xyz/spl-token";
+import { BN, Idl, IdlTypes } from "@coral-xyz/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
 /**
  * Context of logs for specific instruction
  */

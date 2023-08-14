@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 import { PublicKey, SystemInstruction, SystemProgram, Transaction, } from "@solana/web3.js";
-import * as spl from "@solana/spl-token";
-import { BN, BorshInstructionCoder } from "@project-serum/anchor";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, AuthorityType, TOKEN_PROGRAM_ID, TokenInstruction, decodeApproveCheckedInstruction, decodeApproveInstruction, decodeBurnCheckedInstruction, decodeBurnInstruction, decodeCloseAccountInstruction, decodeFreezeAccountInstruction, decodeInitializeAccountInstruction, decodeInitializeMintInstruction, decodeInitializeMintInstructionUnchecked, decodeInitializeMultisigInstruction, decodeMintToCheckedInstruction, decodeMintToInstruction, decodeRevokeInstruction, decodeSetAuthorityInstruction, decodeThawAccountInstruction, decodeTransferCheckedInstruction, decodeTransferInstruction, } from "@solana/spl-token";
+import { BN, BorshInstructionCoder } from "@coral-xyz/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
 import { compiledInstructionToInstruction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts } from "./helpers";
 function decodeSystemInstruction(instruction) {
@@ -188,8 +188,8 @@ function decodeTokenInstruction(instruction) {
     let parsed;
     const decoded = u8().decode(instruction.data);
     switch (decoded) {
-        case spl.TokenInstruction.InitializeMint: {
-            const decodedIx = spl.decodeInitializeMintInstruction(instruction);
+        case TokenInstruction.InitializeMint: {
+            const decodedIx = decodeInitializeMintInstruction(instruction);
             parsed = {
                 name: "initializeMint",
                 accounts: [
@@ -200,8 +200,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.InitializeAccount: {
-            const decodedIx = spl.decodeInitializeAccountInstruction(instruction);
+        case TokenInstruction.InitializeAccount: {
+            const decodedIx = decodeInitializeAccountInstruction(instruction);
             parsed = {
                 name: "initializeAccount",
                 accounts: [
@@ -214,8 +214,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.InitializeMultisig: {
-            const decodedIx = spl.decodeInitializeMultisigInstruction(instruction);
+        case TokenInstruction.InitializeMultisig: {
+            const decodedIx = decodeInitializeMultisigInstruction(instruction);
             const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "initializeMultisig",
@@ -224,8 +224,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.Transfer: {
-            const decodedIx = spl.decodeTransferInstruction(instruction);
+        case TokenInstruction.Transfer: {
+            const decodedIx = decodeTransferInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "transfer",
@@ -239,8 +239,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.Approve: {
-            const decodedIx = spl.decodeApproveInstruction(instruction);
+        case TokenInstruction.Approve: {
+            const decodedIx = decodeApproveInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "approve",
@@ -254,8 +254,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.Revoke: {
-            const decodedIx = spl.decodeRevokeInstruction(instruction);
+        case TokenInstruction.Revoke: {
+            const decodedIx = decodeRevokeInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "revoke",
@@ -264,18 +264,24 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.SetAuthority: {
-            const decodedIx = spl.decodeSetAuthorityInstruction(instruction);
+        case TokenInstruction.SetAuthority: {
+            const decodedIx = decodeSetAuthorityInstruction(instruction);
+            const authrorityTypeMap = {
+                [AuthorityType.AccountOwner]: { accountOwner: {} },
+                [AuthorityType.CloseAccount]: { closeAccount: {} },
+                [AuthorityType.FreezeAccount]: { freezeAccount: {} },
+                [AuthorityType.MintTokens]: { mintTokens: {} },
+            };
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "setAuthority",
                 accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
-                args: { authorityType: decodedIx.data.authorityType, newAuthority: decodedIx.data.newAuthority },
+                args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
             };
             break;
         }
-        case spl.TokenInstruction.MintTo: {
-            const decodedIx = spl.decodeMintToInstruction(instruction);
+        case TokenInstruction.MintTo: {
+            const decodedIx = decodeMintToInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "mintTo",
@@ -289,8 +295,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.Burn: {
-            const decodedIx = spl.decodeBurnInstruction(instruction);
+        case TokenInstruction.Burn: {
+            const decodedIx = decodeBurnInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "burn",
@@ -304,8 +310,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.CloseAccount: {
-            const decodedIx = spl.decodeCloseAccountInstruction(instruction);
+        case TokenInstruction.CloseAccount: {
+            const decodedIx = decodeCloseAccountInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "closeAccount",
@@ -319,8 +325,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.FreezeAccount: {
-            const decodedIx = spl.decodeFreezeAccountInstruction(instruction);
+        case TokenInstruction.FreezeAccount: {
+            const decodedIx = decodeFreezeAccountInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "freezeAccount",
@@ -334,8 +340,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.ThawAccount: {
-            const decodedIx = spl.decodeThawAccountInstruction(instruction);
+        case TokenInstruction.ThawAccount: {
+            const decodedIx = decodeThawAccountInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "thawAccount",
@@ -349,8 +355,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.TransferChecked: {
-            const decodedIx = spl.decodeTransferCheckedInstruction(instruction);
+        case TokenInstruction.TransferChecked: {
+            const decodedIx = decodeTransferCheckedInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "transferChecked",
@@ -365,8 +371,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.ApproveChecked: {
-            const decodedIx = spl.decodeApproveCheckedInstruction(instruction);
+        case TokenInstruction.ApproveChecked: {
+            const decodedIx = decodeApproveCheckedInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "approveChecked",
@@ -381,8 +387,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.MintToChecked: {
-            const decodedIx = spl.decodeMintToCheckedInstruction(instruction);
+        case TokenInstruction.MintToChecked: {
+            const decodedIx = decodeMintToCheckedInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "mintToChecked",
@@ -396,8 +402,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.BurnChecked: {
-            const decodedIx = spl.decodeBurnCheckedInstruction(instruction);
+        case TokenInstruction.BurnChecked: {
+            const decodedIx = decodeBurnCheckedInstruction(instruction);
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "burnChecked",
@@ -411,7 +417,7 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.InitializeAccount2: {
+        case TokenInstruction.InitializeAccount2: {
             const initializeAccount2InstructionData = struct([u8("instruction"), blob(32, "owner")]);
             const decodedIx = initializeAccount2InstructionData.decode(instruction.data);
             parsed = {
@@ -421,11 +427,11 @@ function decodeTokenInstruction(instruction) {
                     { name: "tokenMint", ...instruction.keys[1] },
                     { name: "rentSysvar", ...instruction.keys[2] },
                 ],
-                args: { authority: new PublicKey(decodedIx.owner) },
+                args: { owner: new PublicKey(decodedIx.owner) },
             };
             break;
         }
-        case spl.TokenInstruction.SyncNative: {
+        case TokenInstruction.SyncNative: {
             parsed = {
                 name: "syncNative",
                 accounts: [{ name: "account", ...instruction.keys[0] }],
@@ -433,7 +439,7 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.InitializeAccount3: {
+        case TokenInstruction.InitializeAccount3: {
             const initializeAccount3InstructionData = struct([u8("instruction"), blob(32, "owner")]);
             const decodedIx = initializeAccount3InstructionData.decode(instruction.data);
             parsed = {
@@ -442,11 +448,11 @@ function decodeTokenInstruction(instruction) {
                     { name: "newAccount", ...instruction.keys[0] },
                     { name: "tokenMint", ...instruction.keys[1] },
                 ],
-                args: { authority: new PublicKey(decodedIx.owner) },
+                args: { owner: new PublicKey(decodedIx.owner) },
             };
             break;
         }
-        case spl.TokenInstruction.InitializeMultisig2: {
+        case TokenInstruction.InitializeMultisig2: {
             const multisig = instruction.keys.slice(1).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "initializeMultisig2",
@@ -455,8 +461,8 @@ function decodeTokenInstruction(instruction) {
             };
             break;
         }
-        case spl.TokenInstruction.InitializeMint2: {
-            const decodedIx = spl.decodeInitializeMintInstructionUnchecked(instruction);
+        case TokenInstruction.InitializeMint2: {
+            const decodedIx = decodeInitializeMintInstructionUnchecked(instruction);
             const tokenMint = decodedIx.keys.mint;
             if (!tokenMint)
                 throw new Error(`Failed to parse InitializeMint2 instruction`);
@@ -474,10 +480,10 @@ function decodeTokenInstruction(instruction) {
     return parsed
         ? {
             ...parsed,
-            programId: spl.TOKEN_PROGRAM_ID,
+            programId: TOKEN_PROGRAM_ID,
         }
         : {
-            programId: spl.TOKEN_PROGRAM_ID,
+            programId: TOKEN_PROGRAM_ID,
             name: "unknown",
             accounts: instruction.keys,
             args: { unknown: instruction.data },
@@ -496,7 +502,7 @@ function decodeAssociatedTokenInstruction(instruction) {
             ...[instruction.keys.length > 5 ? { name: "rentSysvar", ...instruction.keys[6] } : undefined],
         ],
         args: {},
-        programId: spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+        programId: ASSOCIATED_TOKEN_PROGRAM_ID,
     };
 }
 function flattenIdlAccounts(accounts, prefix) {
@@ -535,8 +541,8 @@ export class SolanaParser {
     constructor(programInfos, parsers) {
         const standartParsers = [
             [SystemProgram.programId.toBase58(), decodeSystemInstruction],
-            [spl.TOKEN_PROGRAM_ID.toBase58(), decodeTokenInstruction],
-            [spl.ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), decodeAssociatedTokenInstruction],
+            [TOKEN_PROGRAM_ID.toBase58(), decodeTokenInstruction],
+            [ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), decodeAssociatedTokenInstruction],
         ];
         let result;
         parsers = parsers || [];

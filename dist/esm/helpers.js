@@ -1,4 +1,4 @@
-import { utils } from "@project-serum/anchor";
+import { utils } from "@coral-xyz/anchor";
 import { PublicKey, TransactionInstruction, } from "@solana/web3.js";
 export function hexToBuffer(data) {
     const rawHex = data.startsWith("0x") ? data.slice(2) : data;
