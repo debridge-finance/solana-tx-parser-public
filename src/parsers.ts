@@ -598,17 +598,18 @@ export class SolanaParser {
 	 */
 	constructor(programInfos: ProgramInfoType[], parsers?: InstructionParserInfo[]) {
 		this.instructionDecoders = new Map();
+		this.instructionParsers = new Map();
 		const standardParsers: InstructionParserInfo[] = [
 			[SystemProgram.programId.toBase58(), decodeSystemInstruction],
 			[spl.TOKEN_PROGRAM_ID.toBase58(), decodeTokenInstruction],
 			[spl.ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), decodeAssociatedTokenInstruction],
 		];
-		let result: InstructionParsers;
-		parsers = parsers || [];
+
 		for (const programInfo of programInfos) {
 			this.addParserFromIdl(new PublicKey(programInfo.programId), programInfo.idl);
 		}
 
+		let result: InstructionParsers;
 		if (!parsers) {
 			result = new Map(standardParsers);
 		} else {
@@ -622,7 +623,7 @@ export class SolanaParser {
 			}
 		}
 
-		this.instructionParsers = result;
+		result.forEach((parser, key) => this.instructionParsers.set(key, parser));
 	}
 
 	/**
