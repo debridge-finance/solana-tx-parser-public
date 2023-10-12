@@ -645,6 +645,15 @@ export class SolanaParser {
 		this.instructionParsers.set(...this.buildIdlParser(programId, idl));
 	}
 
+	isParserAvailble(programId: PublicKey | string): boolean {
+		return this.instructionDecoders.has(programId);
+	}
+
+	retrieveParserReadyProgramIds(): Array<string> {
+		const programIds = Array.from(this.instructionDecoders.keys());
+		return programIds.map((key) => key.toString());
+	}
+
 	private buildIdlParser(programId: PublicKey | string, idl: Idl): InstructionParserInfo {
 		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl>> = (instruction: TransactionInstruction, decoder: BorshInstructionCoder) => {
 			const parsedIx = decoder?.decode(instruction.data);
