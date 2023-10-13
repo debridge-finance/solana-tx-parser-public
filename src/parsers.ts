@@ -646,11 +646,11 @@ export class SolanaParser {
 	}
 
 	isParserAvailble(programId: PublicKey | string): boolean {
-		return this.instructionDecoders.has(programId);
+		return this.instructionParsers.has(programId);
 	}
 
 	retrieveParserReadyProgramIds(): Array<string> {
-		const programIds = Array.from(this.instructionDecoders.keys());
+		const programIds = Array.from(this.instructionParsers.keys());
 		return programIds.map((key) => key.toString());
 	}
 
