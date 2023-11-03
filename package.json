@@ -1,7 +1,7 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "deBridge",
   "license": "LGPL-2.1",
   "homepage": "https://debridge.finance",
@@ -65,11 +65,14 @@
     "typedoc-plugin-markdown": "^3.15.4"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.28.1-beta.1",
-    "@coral-xyz/spl-token": "^0.28.1-beta.1",
-    "@solana/buffer-layout": "4.0.0",
+    "@coral-xyz/anchor": "^0.29.0",
+    "@coral-xyz/spl-token": "^0.29.0",
     "@solana/spl-token": "^0.3.8",
-    "@solana/web3.js": "^1.73.0",
+    "@solana/web3.js": "^1.87.0",
     "buffer": "6.0.3"
+  },
+  "peerDependencies": {
+    "@solana/buffer-layout": "^4.0.0",
+    "@solana/buffer-layout-utils": "^0.2.0"
   }
 }
