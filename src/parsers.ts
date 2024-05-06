@@ -845,10 +845,10 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 	return parsed
 		? {
 				...parsed,
-				programId: spl.TOKEN_PROGRAM_ID,
+				programId: spl.TOKEN_2022_PROGRAM_ID,
 		  }
 		: {
-				programId: spl.TOKEN_PROGRAM_ID,
+				programId: spl.TOKEN_2022_PROGRAM_ID,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
