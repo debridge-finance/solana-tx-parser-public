@@ -909,8 +909,8 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 						accounts: [
 							{ name: "source", ...decodedIx.keys.source },
 							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "destination", ...decodedIx.keys.destination },
 							{ name: "authority", ...decodedIx.keys.authority },
-							{ ...decodedIx.keys.signers },
 						],
 						args: {
 							amount: decodedIx.data.amount,
@@ -918,6 +918,10 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 							fee: decodedIx.data.fee,
 						},
 					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
 					break;
 				}
 				case spl.TransferFeeInstruction.WithdrawWithheldTokensFromMint: {
@@ -930,10 +934,13 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 							{ name: "mint", ...decodedIx.keys.mint },
 							{ name: "destination", ...decodedIx.keys.destination },
 							{ name: "authority", ...decodedIx.keys.authority },
-							{ ...decodedIx.keys.signers },
 						],
 						args: {},
 					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
 					break;
 				}
 				case spl.TransferFeeInstruction.WithdrawWithheldTokensFromAccounts: {
@@ -946,10 +953,17 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 							{ name: "mint", ...decodedIx.keys.mint },
 							{ name: "destination", ...decodedIx.keys.destination },
 							{ name: "authority", ...decodedIx.keys.authority },
-							{ ...decodedIx.keys.signers },
 						],
 						args: {},
 					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					if (decodedIx.keys.sources) {
+						const multisig = decodedIx.keys.sources.map((meta, idx) => ({ name: `source_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
 					break;
 				}
 				case spl.TransferFeeInstruction.HarvestWithheldTokensToMint: {
@@ -958,9 +972,13 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					if (!tokenMint) throw new Error(`Failed to parse HarvestWithheldTokensToMint instruction`);
 					parsed = {
 						name: "harvestWithheldTokensToMint",
-						accounts: [{ name: "mint", ...decodedIx.keys.mint }, { ...decodedIx.keys.sources }],
+						accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 						args: {},
 					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.sources) {
+						const multisig = decodedIx.keys.sources.map((meta, idx) => ({ name: `source_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
 					break;
 				}
 				case spl.TransferFeeInstruction.SetTransferFee: {
@@ -969,9 +987,16 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					if (!tokenMint) throw new Error(`Failed to parse SetTransferFee instruction`);
 					parsed = {
 						name: "setTransferFee",
-						accounts: [{ name: "mint", ...decodedIx.keys.mint }, { name: "authority", ...decodedIx.keys.authority }, { ...decodedIx.keys.signers }],
+						accounts: [
+							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "authority", ...decodedIx.keys.authority },
+						],
 						args: { transferFeeBasisPoints: decodedIx.data.transferFeeBasisPoints, maximumFee: decodedIx.data.maximumFee },
 					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
 					break;
 				}
 				default: {
@@ -979,6 +1004,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		case spl.TokenInstruction.DefaultAccountStateExtension: {
 			const discriminator = u8().decode(instruction.data.slice(1));
@@ -1011,6 +1037,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		case spl.TokenInstruction.MemoTransferExtension: {
 			const account = instruction.keys[0].pubkey;
@@ -1101,6 +1128,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		case spl.TokenInstruction.MetadataPointerExtension: {
 			const discriminator = u8().decode(instruction.data.slice(1));
@@ -1133,6 +1161,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		case spl.TokenInstruction.GroupPointerExtension: {
 			const discriminator = u8().decode(instruction.data.slice(1));
@@ -1165,6 +1194,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		case spl.TokenInstruction.GroupMemberPointerExtension: {
 			const discriminator = u8().decode(instruction.data.slice(1));
@@ -1197,6 +1227,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					break;
 				}
 			}
+			break;
 		}
 		default: {
 			const discriminator = instruction.data.slice(0, 8).toString("hex");
@@ -1275,6 +1306,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				default:
 					parsed = null;
 			}
+			break;
 		}
 	}
 
