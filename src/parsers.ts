@@ -50,6 +50,7 @@ import {
 import {
 	decodeSetTransferFeeInstruction,
 	emitLayout,
+	getAccountDataSizeLayout,
 	metadataLayout,
 	removeKeyLayout,
 	updateAuthorityLayout,
@@ -846,6 +847,28 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				accounts: [{ name: "tokenMint", ...decodedIx.keys.mint }],
 				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
 			} as ParsedIdlInstruction<SplToken22, "initializeMint2">;
+			break;
+		}
+		case spl.TokenInstruction.GetAccountDataSize: {
+			const tokenMint = instruction.keys[0].pubkey;
+			if (!tokenMint) throw new Error(`Failed to parse GetAccountDataSize instruction`);
+			const instructionData = getAccountDataSizeLayout.decode(instruction.data);
+			parsed = {
+				name: "getAccountDataSize",
+				accounts: [{ name: "mint", ...instruction.keys[0] }],
+				args: { extensionTypes: instructionData.extensions.map((ext) => spl.ExtensionType[ext]) },
+			} as unknown as ParsedIdlInstruction<SplToken22, "getAccountDataSize">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeImmutableOwner: {
+			const decodedIx = spl.decodeInitializeImmutableOwnerInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const account = decodedIx.keys.account;
+			if (!account) throw new Error(`Failed to parse InitializeImmutableOwner instruction`);
+			parsed = {
+				name: "initializeImmutableOwner",
+				accounts: [{ name: "account", ...decodedIx.keys.account }],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "initializeImmutableOwner">;
 			break;
 		}
 		case spl.TokenInstruction.AmountToUiAmount: {
