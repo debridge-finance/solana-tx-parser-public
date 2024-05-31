@@ -1,7 +1,7 @@
 {
   "name": "@shyft.to/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
-  "version": "1.1.16",
+  "version": "1.1.17",
   "author": "deBridge->Shyft",
   "license": "LGPL-2.1",
   "homepage": "https://shyft.to",
