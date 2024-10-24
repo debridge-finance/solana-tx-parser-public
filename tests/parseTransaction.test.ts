@@ -53,7 +53,7 @@ function parseTransactionTest() {
 	it("can parse jupiter tx", async () => {
 		const rpcConnection = new Connection(clusterApiUrl("mainnet-beta"));
 		const txParser = new SolanaParser([{ idl: JupiterIdl as unknown as Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }]);
-		const parsed = await txParser.parseTransaction(
+		const parsed = await txParser.parseTransactionByHash(
 			rpcConnection,
 			"5zgvxQjV6BisU8SfahqasBZGfXy5HJ3YxYseMBG7VbR4iypDdtdymvE1jmEMG7G39bdVBaHhLYUHUejSTtuZEpEj",
 			false,

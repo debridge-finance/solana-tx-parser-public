@@ -14,6 +14,10 @@ import {
 
 import { LogContext } from "./interfaces";
 
+export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
+	return `${s[0].toLocaleLowerCase()}${s.slice(1)}` as Uncapitalize<S>;
+}
+
 export function hexToBuffer(data: string) {
 	const rawHex = data.startsWith("0x") ? data.slice(2) : data;
 
@@ -231,3 +235,41 @@ export function parseLogs(logs: string[]): LogContext[] {
 
 	return result;
 }
+
+/** Python script to extract native solana logs
+ * 
+ # coding=utf8
+# the above tag defines encoding for this document and is for Python 2.x compatibility
+
+import re
+import os
+
+regex = r"ic_msg!\((\s|.)*?,\s*?\"(?P<log>.*?)\""
+
+def print_logs(data):
+    matches = re.finditer(regex, data)
+    for m in matches:
+        print(m.group('log'))
+
+def open_files_in_directory(directory):
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if '.rs' not in filename:
+                continue
+            file_path = os.path.join(root, filename)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    print(f'Opened file: {file_path}')
+                    content = file.read() 
+                    print_logs(content)
+            except Exception as e:
+                print(f'Could not open file {file_path}: {e}')
+        for d in dirs:
+            if d == '.' or d == '..':
+                continue
+            open_files_in_directory(os.path.join(root, d))
+
+if __name__ == "__main__":
+    open_files_in_directory('INPUT DIR HERE')
+
+ */
