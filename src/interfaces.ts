@@ -6,7 +6,7 @@ export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
 /**
  * Context of logs for specific instruction
  */
-export type LogContext = {
+export type ProgramLogContext = {
 	rawLogs: string[];
 	errors: string[];
 	logMessages: string[];
@@ -16,6 +16,7 @@ export type LogContext = {
 	id: number;
 	instructionIndex: number;
 	invokeResult?: string;
+	unitsConsumed?: number;
 };
 
 export type TransactionWithLogs = {

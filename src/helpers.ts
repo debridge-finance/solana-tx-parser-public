@@ -12,7 +12,7 @@ import {
 	VersionedTransactionResponse,
 } from "@solana/web3.js";
 
-import { LogContext } from "./interfaces";
+import { ProgramLogContext } from "./interfaces";
 
 export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
 	return `${s[0].toLocaleLowerCase()}${s.slice(1)}` as Uncapitalize<S>;
@@ -154,7 +154,7 @@ export function flattenTransactionResponse(transaction: VersionedTransactionResp
 /**
  * @private
  */
-function newLogContext(programId: string, depth: number, id: number, instructionIndex: number): LogContext {
+function newLogContext(programId: string, depth: number, id: number, instructionIndex: number): ProgramLogContext {
 	return {
 		logMessages: [],
 		dataLogs: [],
@@ -167,6 +167,166 @@ function newLogContext(programId: string, depth: number, id: number, instruction
 	};
 }
 
+function generateLogsParsingRegex() {
+	const knownMsgs = [
+		"{}'s writable privilege escalated",
+		"{}'s signer privilege escalated",
+		"Unknown program {}",
+		"Account {} is not executable",
+		"Unable to deserialize config account: {}",
+		"account {} is not in account list",
+		"account {} signer_key().is_none()",
+		"account[{}].signer_key() does not match Config data)",
+		"account {} is not in stored signer list",
+		"account[0].signer_key().is_none()",
+		"new config contains duplicate keys",
+		"too few signers: {}; expected: {}",
+		"instruction data too large",
+		"Checking if destination stake is mergeable",
+		"Checking if source stake is mergeable",
+		"Merging stake accounts",
+		"expected uninitialized stake account owner to be {}, not {}",
+		"expected uninitialized stake account data len to be {}, not {}",
+		"expected uninitialized stake account to be uninitialized",
+		"expected vote account owner to be {}, not {}",
+		"stake is not active",
+		"redelegating to the same vote account not permitted",
+		"invalid stake account data",
+		"Unable to merge due to metadata mismatch",
+		"Unable to merge due to voter mismatch",
+		"Unable to merge due to stake deactivation",
+		"invalid proof data",
+		"proof verification failed: {}",
+		"proof_verification failed: {}",
+		"CloseContextState",
+		"VerifyZeroBalance",
+		"VerifyWithdraw",
+		"VerifyCiphertextCiphertextEquality",
+		"VerifyTransfer",
+		"VerifyTransferWithFee",
+		"VerifyPubkeyValidity",
+		"VerifyRangeProof",
+		"VerifyBatchedRangeProof64",
+		"VerifyBatchedRangeProof128",
+		"VerifyBatchedRangeProof256",
+		"VerifyCiphertextCommitmentEquality",
+		"VerifyGroupedCiphertext2HandlesValidity",
+		"VerifyBatchedGroupedCiphertext2HandlesValidity",
+		"VerifyFeeSigma",
+		"VerifyGroupedCiphertext3HandlesValidity",
+		"VerifyBatchedGroupedCiphertext3HandlesValidity",
+		"Create: address {} does not match derived address {}",
+		"Allocate: 'to' account {} must sign",
+		"Allocate: account {} already in use",
+		"Allocate: requested {}, max allowed {}",
+		"Assign: account {} must sign",
+		"Create Account: account {} already in use",
+		"Transfer: `from` must not carry data",
+		"Transfer: insufficient lamports {}, need {}",
+		"Transfer: `from` account {} must sign",
+		"Transfer: 'from' account {} must sign",
+		"Transfer: 'from' address {} does not match derived address {}",
+		"Advance nonce account: recent blockhash list is empty",
+		"Initialize nonce account: recent blockhash list is empty",
+		"Advance nonce account: Account {} must be writeable",
+		"Advance nonce account: Account {} must be a signer",
+		"Advance nonce account: nonce can only advance once per slot",
+		"Advance nonce account: Account {} state is invalid",
+		"Withdraw nonce account: Account {} must be writeable",
+		"Withdraw nonce account: insufficient lamports {}, need {}",
+		"Withdraw nonce account: nonce can only advance once per slot",
+		"Withdraw nonce account: Account {} must sign",
+		"Initialize nonce account: Account {} must be writeable",
+		"Initialize nonce account: insufficient lamports {}, need {}",
+		"Initialize nonce account: Account {} state is invalid",
+		"Authorize nonce account: Account {} must be writeable",
+		"Authorize nonce account: Account {} state is invalid",
+		"Authorize nonce account: Account {} must sign",
+		"Failed to get runtime environment: {}",
+		"Failed to register syscalls: {}",
+		"Write overflow: {} &lt; {}",
+		"Poseidon hashing {} sequences is not supported",
+		"Overflow while calculating the compute cost",
+		"{} Hashing {} sequences in one syscall is over the limit {}",
+		"Invalid account info pointer `{}': {} != {}",
+		"Internal error: index mismatch for account {}",
+		"Account data size realloc limited to {} in inner instructions",
+		"Table account must not be allocated",
+		"Authority account must be a signer",
+		"Payer account must be a signer",
+		"{} is not a recent slot",
+		"Table address must match derived address: {}",
+		"Lookup table is already frozen",
+		"Deactivated tables cannot be frozen",
+		"Empty lookup tables cannot be frozen",
+		"Deactivated tables cannot be extended",
+		"Lookup table is full and cannot contain more addresses",
+		"Must extend with at least one address",
+		"Extended lookup table length {} would exceed max capacity of {}",
+		"Lookup table is frozen",
+		"Lookup table is already deactivated",
+		"Lookup table cannot be the recipient of reclaimed lamports",
+		"Lookup table is not deactivated",
+		"Table cannot be closed until it's fully deactivated in {} blocks",
+	];
+
+	const prepareLineForRegex = (l: string) => l.replaceAll('{}', '.*').replaceAll('(', '\\(').replaceAll(')', '\\)').replaceAll(']', '\\]').replaceAll('[', '\\[')
+
+	const regexTemplate = `\
+(?<logTruncated>^Log truncated$)|\
+(?<programInvoke>^Program (?<invokeProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) invoke \\[(?<level>\\d+)\\]$)|\
+(?<programSuccessResult>^Program (?<successResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) success$)|\
+(?<programFailedResult>^Program (?<failedResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) failed: (?<failedResultErr>.*)$)|\
+(?<programCompleteFailedResult>^Program failed to complete: (?<failedCompleteError>.*)$)|\
+(?<programLog>^Program log: (?<logMessage>.*)$)|\
+(?<programData>^Program data: (?<data>.*)$)|\
+(?<programConsumed>^Program (?<consumedProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) consumed (?<consumedComputeUnits>\\d*) of (?<allComputedUnits>\\d*) compute units$)|\
+(?<programReturn>^Program return: (?<returnProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) (?<returnMessage>.*)$)|\
+(?<errorMessage>^(${knownMsgs.map(prepareLineForRegex).join('|')})$)`
+
+	console.log(regexTemplate);
+	return new RegExp(regexTemplate, 's')
+}
+
+type ImmediateLogContext = {
+	id: number,
+	currentInstruction: number,
+	currentDepth: number
+};
+
+type FullLogContext = {
+	immediate: ImmediateLogContext,
+	callStack: string[],
+	callIds: number[],
+};
+
+function programEnter(context: FullLogContext, invokedProgram: string, invokeLevel: number): ProgramLogContext {
+
+	if (invokeLevel != context.immediate.currentDepth + 1) throw new Error(`invoke depth mismatch, log: ${invokeLevel}, expected: ${context.immediate.currentDepth}`);
+	context.immediate.id += 1;
+	context.immediate.currentDepth += 1;
+	
+	context.callStack.push(invokedProgram);
+	context.callIds.push(context.immediate.id);
+
+	return newLogContext(invokedProgram, invokeLevel, context.immediate.id, context.immediate.currentInstruction);
+}
+
+function programExit(context: FullLogContext, exitedProgram: string): number {
+	const lastProgram = context.callStack.pop();
+	const lastCallIndex = context.callIds.pop();
+	if (lastCallIndex === undefined) throw new Error("callIds malformed");
+	if (lastProgram != exitedProgram) throw new Error("[ProramExit] callstack mismatch");
+			
+	context.immediate.currentDepth -= 1;
+	if (context.immediate.currentDepth === 0) {
+		context.immediate.currentInstruction += 1;
+	}
+
+	return lastCallIndex;
+
+}
+
 /**
  * Parses transaction logs and provides additional context such as
  * - programId that generated the message
@@ -176,64 +336,75 @@ function newLogContext(programId: string, depth: number, id: number, instruction
  * @param logs logs from TransactionResponse.meta.logs
  * @returns parsed logs with call depth and additional context
  */
-export function parseLogs(logs: string[]): LogContext[] {
-	const parserRe =
-		/(?<logTruncated>^Log truncated$)|(?<programInvoke>^Program (?<invokeProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) invoke \[(?<level>\d+)\]$)|(?<programSuccessResult>^Program (?<successResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) success$)|(?<programFailedResult>^Program (?<failedResultProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) failed: (?<failedResultErr>.*)$)|(?<programCompleteFailedResult>^Program failed to complete: (?<failedCompleteError>.*)$)|(?<programLog>^^Program log: (?<logMessage>.*)$)|(?<programData>^Program data: (?<data>.*)$)|(?<programConsumed>^Program (?<consumedProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) consumed (?<consumedComputeUnits>\d*) of (?<allComputedUnits>\d*) compute units$)|(?<programReturn>^Program return: (?<returnProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) (?<returnMessage>.*)$)/s;
-	const result: LogContext[] = [];
-	let id = -1;
-	let currentInstruction = 0;
-	let currentDepth = 0;
-	const callStack = [];
-	const callIds: number[] = [];
+export function parseLogs(logs: string[]): ProgramLogContext[] {
+	
+	const debugLog = (...s: any[]) => console.log(s); 
+	const parserRe = generateLogsParsingRegex()
+	const programLogs: ProgramLogContext[] = [];
+	
+	let immediate: ImmediateLogContext = {
+		id: -1,
+		currentInstruction: 0,
+		currentDepth: 0,
+	}
+	const context: FullLogContext = {
+		immediate,
+		callStack: [],
+		callIds: [],
+	}
+
+	const getCurrentCallId = (c: FullLogContext) => c.callIds[c.callIds.length - 1];
+	const getCurrentProgram = (c: FullLogContext) => c.callStack[c.callStack.length - 1];
+
 	for (const log of logs) {
 		const match = parserRe.exec(log);
 		if (!match || !match.groups) {
 			throw new Error(`Failed to parse log line: ${log}`);
 		}
 
-		if (match.groups.logTruncated) {
-			result[callIds[callIds.length - 1]].invokeResult = "Log truncated";
-		} else if (match.groups.programInvoke) {
-			callStack.push(match.groups.invokeProgramId);
-			id += 1;
-			currentDepth += 1;
-			callIds.push(id);
-			if (match.groups.level != currentDepth.toString()) throw new Error(`invoke depth mismatch, log: ${match.groups.level}, expected: ${currentDepth}`);
-			result.push(newLogContext(callStack[callStack.length - 1], callStack.length, id, currentInstruction));
-			result[result.length - 1].rawLogs.push(log);
+		if (match.groups.programInvoke) {
+			const program = match.groups.invokeProgramId;
+			const level = Number(match.groups.level);
+			const newProgramContext = programEnter(context, program, level);
+
+			newProgramContext.rawLogs.push(log);
+			programLogs.push(newProgramContext);
 		} else if (match.groups.programSuccessResult) {
-			const lastProgram = callStack.pop();
-			const lastCallIndex = callIds.pop();
-			if (lastCallIndex === undefined) throw new Error("callIds malformed");
-			if (lastProgram != match.groups.successResultProgramId) throw new Error("[ProramSuccess] callstack mismatch");
-			result[lastCallIndex].rawLogs.push(log);
-			currentDepth -= 1;
-			if (currentDepth === 0) {
-				currentInstruction += 1;
-			}
+			const lastCallIndex = programExit(context, match.groups.successResultProgramId);
+			programLogs[lastCallIndex].rawLogs.push(log);
 		} else if (match.groups.programFailedResult) {
-			const lastProgram = callStack.pop();
-			if (lastProgram != match.groups.failedResultProgramId) throw new Error("[ProgramFailed] callstack mismatch");
-			result[callIds[callIds.length - 1]].rawLogs.push(log);
-			result[callIds[callIds.length - 1]].errors.push(match.groups.failedResultErr);
+			const lastCallIndex = programExit(context, match.groups.failedResultProgramId);
+			
+			programLogs[lastCallIndex].rawLogs.push(log);
+			programLogs[lastCallIndex].errors.push(log);
 		} else if (match.groups.programCompleteFailedResult) {
-			result[callIds[callIds.length - 1]].rawLogs.push(log);
-			result[callIds[callIds.length - 1]].errors.push(match.groups.failedCompleteError);
-		} else if (match.groups.programLog) {
-			result[callIds[callIds.length - 1]].rawLogs.push(log);
-			result[callIds[callIds.length - 1]].logMessages.push(match.groups.logMessage);
-		} else if (match.groups.programData) {
-			result[callIds[callIds.length - 1]].rawLogs.push(log);
-			result[callIds[callIds.length - 1]].dataLogs.push(match.groups.data);
-		} else if (match.groups.programConsumed) {
-			result[callIds[callIds.length - 1]].rawLogs.push(log);
-		} else if (match.groups.programReturn) {
-			if (callStack[callStack.length - 1] != match.groups.returnProgramId) throw new Error("[InvokeReturn]: callstack mismatch");
-			result[callIds[callIds.length - 1]].invokeResult = match.groups.returnMessage;
+			const currentCall = getCurrentCallId(context);
+			
+			programLogs[currentCall].rawLogs.push(log);
+			programLogs[currentCall].errors.push(match.groups.failedCompleteError);
+		} else {
+			const currentCall = getCurrentCallId(context);
+			programLogs[currentCall].rawLogs.push(log);
+
+			if (match.groups.logTruncated) {
+				programLogs[currentCall].invokeResult = "Log truncated";
+			} else if (match.groups.programLog) {
+				programLogs[currentCall].logMessages.push(match.groups.logMessage);
+			} else if (match.groups.programData) {
+				programLogs[currentCall].dataLogs.push(match.groups.data);
+			} else if (match.groups.programConsumed) {
+				programLogs[currentCall].unitsConsumed = Number(match.groups.consumedComputeUnits);
+			} else if (match.groups.programReturn) {
+				const returnProgram = match.groups.returnProgramId;
+				if (getCurrentProgram(context) != returnProgram) throw new Error("[InvokeReturn]: callstack mismatch");
+				programLogs[currentCall].invokeResult = match.groups.returnMessage;
+			} else if (match.groups.errorMessage) {
+				programLogs[currentCall].errors.push(log)
+			}
 		}
 	}
 
-	return result;
+	return programLogs;
 }
 
 /** Python script to extract native solana logs
