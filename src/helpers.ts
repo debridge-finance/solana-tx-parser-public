@@ -270,7 +270,8 @@ function generateLogsParsingRegex() {
 		"Table cannot be closed until it's fully deactivated in {} blocks",
 	];
 
-	const prepareLineForRegex = (l: string) => l.replaceAll('{}', '.*').replaceAll('(', '\\(').replaceAll(')', '\\)').replaceAll(']', '\\]').replaceAll('[', '\\[')
+	const prepareLineForRegex = (l: string) =>
+		l.replaceAll("{}", ".*").replaceAll("(", "\\(").replaceAll(")", "\\)").replaceAll("]", "\\]").replaceAll("[", "\\[");
 
 	const regexTemplate = `\
 (?<logTruncated>^Log truncated$)|\
@@ -282,30 +283,31 @@ function generateLogsParsingRegex() {
 (?<programData>^Program data: (?<data>.*)$)|\
 (?<programConsumed>^Program (?<consumedProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) consumed (?<consumedComputeUnits>\\d*) of (?<allComputedUnits>\\d*) compute units$)|\
 (?<programReturn>^Program return: (?<returnProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) (?<returnMessage>.*)$)|\
-(?<errorMessage>^(${knownMsgs.map(prepareLineForRegex).join('|')})$)`
+(?<errorMessage>^(${knownMsgs.map(prepareLineForRegex).join("|")})$)`;
 
 	console.log(regexTemplate);
-	return new RegExp(regexTemplate, 's')
+
+	return new RegExp(regexTemplate, "s");
 }
 
 type ImmediateLogContext = {
-	id: number,
-	currentInstruction: number,
-	currentDepth: number
+	id: number;
+	currentInstruction: number;
+	currentDepth: number;
 };
 
 type FullLogContext = {
-	immediate: ImmediateLogContext,
-	callStack: string[],
-	callIds: number[],
+	immediate: ImmediateLogContext;
+	callStack: string[];
+	callIds: number[];
 };
 
 function programEnter(context: FullLogContext, invokedProgram: string, invokeLevel: number): ProgramLogContext {
-
-	if (invokeLevel != context.immediate.currentDepth + 1) throw new Error(`invoke depth mismatch, log: ${invokeLevel}, expected: ${context.immediate.currentDepth}`);
+	if (invokeLevel != context.immediate.currentDepth + 1)
+		throw new Error(`invoke depth mismatch, log: ${invokeLevel}, expected: ${context.immediate.currentDepth}`);
 	context.immediate.id += 1;
 	context.immediate.currentDepth += 1;
-	
+
 	context.callStack.push(invokedProgram);
 	context.callIds.push(context.immediate.id);
 
@@ -317,14 +319,13 @@ function programExit(context: FullLogContext, exitedProgram: string): number {
 	const lastCallIndex = context.callIds.pop();
 	if (lastCallIndex === undefined) throw new Error("callIds malformed");
 	if (lastProgram != exitedProgram) throw new Error("[ProramExit] callstack mismatch");
-			
+
 	context.immediate.currentDepth -= 1;
 	if (context.immediate.currentDepth === 0) {
 		context.immediate.currentInstruction += 1;
 	}
 
 	return lastCallIndex;
-
 }
 
 /**
@@ -337,21 +338,20 @@ function programExit(context: FullLogContext, exitedProgram: string): number {
  * @returns parsed logs with call depth and additional context
  */
 export function parseLogs(logs: string[]): ProgramLogContext[] {
-	
-	const debugLog = (...s: any[]) => console.log(s); 
-	const parserRe = generateLogsParsingRegex()
+	const debugLog = (...s: any[]) => console.log(s);
+	const parserRe = generateLogsParsingRegex();
 	const programLogs: ProgramLogContext[] = [];
-	
-	let immediate: ImmediateLogContext = {
+
+	const immediate: ImmediateLogContext = {
 		id: -1,
 		currentInstruction: 0,
 		currentDepth: 0,
-	}
+	};
 	const context: FullLogContext = {
 		immediate,
 		callStack: [],
 		callIds: [],
-	}
+	};
 
 	const getCurrentCallId = (c: FullLogContext) => c.callIds[c.callIds.length - 1];
 	const getCurrentProgram = (c: FullLogContext) => c.callStack[c.callStack.length - 1];
@@ -374,12 +374,12 @@ export function parseLogs(logs: string[]): ProgramLogContext[] {
 			programLogs[lastCallIndex].rawLogs.push(log);
 		} else if (match.groups.programFailedResult) {
 			const lastCallIndex = programExit(context, match.groups.failedResultProgramId);
-			
+
 			programLogs[lastCallIndex].rawLogs.push(log);
 			programLogs[lastCallIndex].errors.push(log);
 		} else if (match.groups.programCompleteFailedResult) {
 			const currentCall = getCurrentCallId(context);
-			
+
 			programLogs[currentCall].rawLogs.push(log);
 			programLogs[currentCall].errors.push(match.groups.failedCompleteError);
 		} else {
@@ -399,7 +399,7 @@ export function parseLogs(logs: string[]): ProgramLogContext[] {
 				if (getCurrentProgram(context) != returnProgram) throw new Error("[InvokeReturn]: callstack mismatch");
 				programLogs[currentCall].invokeResult = match.groups.returnMessage;
 			} else if (match.groups.errorMessage) {
-				programLogs[currentCall].errors.push(log)
+				programLogs[currentCall].errors.push(log);
 			}
 		}
 	}

@@ -100,6 +100,7 @@ export interface ProgramInfoType {
  */
 type TypeMap = {
 	publicKey: PublicKey;
+	pubkey: PublicKey;
 	bool: boolean;
 	string: string;
 } & {
@@ -116,18 +117,18 @@ type IdlType = Idl["instructions"][number]["args"][number]["type"];
 export type DecodeType<T extends IdlType, Defined> = T extends keyof TypeMap
 	? TypeMap[T]
 	: T extends { defined: keyof Defined }
-	? Defined[T["defined"]]
-	: T extends { option: { defined: keyof Defined } }
-	? Defined[T["option"]["defined"]]
-	: T extends { option: keyof TypeMap }
-	? TypeMap[T["option"]]
-	: T extends { vec: keyof TypeMap }
-	? TypeMap[T["vec"]][]
-	: T extends { vec: keyof Defined }
-	? Defined[T["vec"]][]
-	: T extends { array: [defined: keyof TypeMap, size: number] }
-	? TypeMap[T["array"][0]][]
-	: unknown;
+		? Defined[T["defined"]]
+		: T extends { option: { defined: keyof Defined } }
+			? Defined[T["option"]["defined"]]
+			: T extends { option: keyof TypeMap }
+				? TypeMap[T["option"]]
+				: T extends { vec: keyof TypeMap }
+					? TypeMap[T["vec"]][]
+					: T extends { vec: keyof Defined }
+						? Defined[T["vec"]][]
+						: T extends { array: [defined: keyof TypeMap, size: number] }
+							? TypeMap[T["array"][0]][]
+							: unknown;
 
 /**
  * Interface to get instruction by name from IDL
@@ -154,13 +155,13 @@ export type IdlAccountItem = IdlAccounts | IdlAccount;
  * @private
  */
 export interface AssociatedTokenProgramIdlLike extends Idl {
-	name: "associated_token_program",
-	address: "",
+	name: "associated_token_program";
+	address: "";
 	metadata: {
-		name: "associated_token_program",
-		version: "1.0.3",
-		spec: "",
-	},
+		name: "associated_token_program";
+		version: "1.0.3";
+		spec: "";
+	};
 	instructions: [
 		{
 			discriminator: [0];
@@ -205,7 +206,7 @@ export interface AssociatedTokenProgramIdlLike extends Idl {
 			args: [];
 		},
 		{
-			discriminator: [],
+			discriminator: [];
 			name: "createAssociatedTokenAccount";
 			accounts: [
 				{
@@ -247,4 +248,4 @@ export interface AssociatedTokenProgramIdlLike extends Idl {
 			args: [];
 		},
 	];
-};
+}

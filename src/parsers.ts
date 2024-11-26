@@ -50,7 +50,7 @@ import {
 	decodeTransferCheckedWithFeeInstruction,
 	decodeUiAmountToAmountInstruction,
 	decodeWithdrawWithheldTokensFromAccountsInstruction,
-	decodeWithdrawWithheldTokensFromMintInstruction
+	decodeWithdrawWithheldTokensFromMintInstruction,
 } from "@solana/spl-token";
 import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl } from "@coral-xyz/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
@@ -71,7 +71,13 @@ import {
 	SplToken,
 	UnknownInstruction,
 } from "./interfaces";
-import { compiledInstructionToInstruction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts, uncapitalize } from "./helpers";
+import {
+	compiledInstructionToInstruction,
+	flattenTransactionResponse,
+	parsedInstructionToInstruction,
+	parseTransactionAccounts,
+	uncapitalize,
+} from "./helpers";
 
 function decodeSystemInstruction(instruction: TransactionInstruction): ParsedInstruction<SystemProgramIdl> {
 	const ixType = SystemInstruction.decodeInstructionType(instruction);
@@ -246,13 +252,13 @@ function decodeSystemInstruction(instruction: TransactionInstruction): ParsedIns
 		? {
 				...parsed,
 				programId: SystemProgram.programId,
-		  }
+			}
 		: {
 				programId: SystemProgram.programId,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-		  };
+			};
 }
 
 function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<SplToken> {
@@ -338,7 +344,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		case TokenInstruction.SetAuthority: {
 			const decodedIx = decodeSetAuthorityInstruction(instruction);
 			const originalAuthorityEnumKeys = Object.keys(AuthorityType) as (keyof typeof AuthorityType)[];
-			const keysWithAnchorLikeObjects = Object.fromEntries(originalAuthorityEnumKeys.map( (k) => [k, { [uncapitalize(k)]: {} }] ));
+			const keysWithAnchorLikeObjects = Object.fromEntries(originalAuthorityEnumKeys.map((k) => [k, { [uncapitalize(k)]: {} }]));
 
 			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
 			parsed = {
@@ -548,7 +554,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 			parsed = {
 				name: "initializeImmutableOwner",
 				accounts: [{ name: "account", ...decodedIx.keys.account }],
-				args: { },
+				args: {},
 			} as ParsedIdlInstruction<SplToken, "initializeImmutableOwner">;
 			break;
 		}
@@ -645,13 +651,13 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		? {
 				...parsed,
 				programId: TOKEN_PROGRAM_ID,
-		  }
+			}
 		: {
 				programId: TOKEN_PROGRAM_ID,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-		  };
+			};
 }
 
 function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<AssociatedTokenProgramIdlLike> {
