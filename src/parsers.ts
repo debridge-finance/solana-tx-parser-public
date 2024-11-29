@@ -15,6 +15,7 @@ import {
 	VersionedMessage,
 	LoadedAddresses,
 } from "@solana/web3.js";
+import * as spl from "@solana/spl-token";
 import {
 	ASSOCIATED_TOKEN_PROGRAM_ID,
 	AuthorityType,
@@ -44,17 +45,23 @@ import {
 	decodeInitializeImmutableOwnerInstruction,
 	decodeInitializeMintCloseAuthorityInstruction,
 	decodeInitializePermanentDelegateInstruction,
-	decodeInitializeTransferFeeConfigInstruction,
-	decodeSetTransferFeeInstruction,
 	decodeSyncNativeInstruction,
-	decodeTransferCheckedWithFeeInstruction,
 	decodeUiAmountToAmountInstruction,
-	decodeWithdrawWithheldTokensFromAccountsInstruction,
-	decodeWithdrawWithheldTokensFromMintInstruction,
 } from "@solana/spl-token";
 import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl } from "@coral-xyz/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
+import { splDiscriminate } from "@solana/spl-type-length-value";
 
+import {
+	decodeSetTransferFeeInstruction,
+	emitLayout,
+	getAccountDataSizeLayout,
+	metadataLayout,
+	removeKeyLayout,
+	updateAuthorityLayout,
+	updateMetadataLayout,
+} from "./programs/token-extensions";
+import { SplToken22 } from "./programs/spl-token-22.program";
 import {
 	AssociatedTokenProgramIdlLike,
 	IdlAccount,
@@ -594,7 +601,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 			// 	accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 			// 	args: { uiAmount: new BN(decodedIx.data.amount).toString() },
 			// } as ParsedIdlInstruction<SplToken, "">;
-			// break;
+			break;
 		}
 		case TokenInstruction.ConfidentialTransferExtension: {
 			// TODO: ix missing in the idl for now
@@ -627,7 +634,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		}
 		case TokenInstruction.InitializePermanentDelegate: {
 			// TODO: ix missing in the idl for now
-			const decoded = decodeInitializePermanentDelegateInstruction(instruction, instruction.programId);
+			// const decoded = decodeInitializePermanentDelegateInstruction(instruction, instruction.programId);
 			break;
 		}
 		case TokenInstruction.TransferHookExtension: {
@@ -658,6 +665,798 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
 			};
+}
+
+async function decodeToken2022Instruction(instruction: TransactionInstruction): Promise<ParsedInstruction<SplToken>> {
+	let parsed: ParsedIdlInstruction<SplToken22> | null;
+	const decoded = u8().decode(instruction.data);
+	switch (decoded) {
+		case spl.TokenInstruction.InitializeMint: {
+			const decodedIx = spl.decodeInitializeMintInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			parsed = {
+				name: "initializeMint",
+				accounts: [
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "rentSysvar", ...decodedIx.keys.rent },
+				],
+				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
+			} as ParsedIdlInstruction<SplToken22, "initializeMint">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeAccount: {
+			const decodedIx = spl.decodeInitializeAccountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			parsed = {
+				name: "initializeAccount",
+				accounts: [
+					{ name: "newAccount", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "owner", ...decodedIx.keys.owner },
+					{ name: "rentSysvar", ...decodedIx.keys.rent },
+				],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "initializeAccount">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeMultisig: {
+			const decodedIx = spl.decodeInitializeMultisigInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "initializeMultisig",
+				accounts: [{ name: "multisig", ...decodedIx.keys.account }, { name: "rentSysvar", ...decodedIx.keys.rent }, ...multisig],
+				args: { m: decodedIx.data.m },
+			} as ParsedIdlInstruction<SplToken22, "initializeMultisig">;
+			break;
+		}
+		case spl.TokenInstruction.Transfer: {
+			const decodedIx = spl.decodeTransferInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "transfer",
+				accounts: [
+					{ name: "source", ...decodedIx.keys.source },
+					{ name: "destination", ...decodedIx.keys.destination },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()) },
+			} as ParsedIdlInstruction<SplToken22, "transfer">;
+			break;
+		}
+		case spl.TokenInstruction.Approve: {
+			const decodedIx = spl.decodeApproveInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "approve",
+				accounts: [
+					{ name: "source", ...decodedIx.keys.account },
+					{ name: "delegate", ...decodedIx.keys.delegate },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()) },
+			} as ParsedIdlInstruction<SplToken22, "approve">;
+			break;
+		}
+		case spl.TokenInstruction.Revoke: {
+			const decodedIx = spl.decodeRevokeInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "revoke",
+				accounts: [{ name: "source", ...decodedIx.keys.account }, { name: "owner", ...decodedIx.keys.owner }, ...multisig],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "revoke">;
+			break;
+		}
+		case spl.TokenInstruction.SetAuthority: {
+			const decodedIx = spl.decodeSetAuthorityInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "setAuthority",
+				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
+				args: { authorityType: Number(decodedIx.data.authorityType), newAuthority: decodedIx.data.newAuthority },
+				programId: spl.TOKEN_2022_PROGRAM_ID,
+			} as ParsedIdlInstruction<SplToken22, "setAuthority">;
+			break;
+		}
+		case spl.TokenInstruction.MintTo: {
+			const decodedIx = spl.decodeMintToInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "mintTo",
+				accounts: [
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "mintTo", ...decodedIx.keys.destination },
+					{ name: "authority", ...decodedIx.keys.authority },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()) },
+			} as ParsedIdlInstruction<SplToken22, "mintTo">;
+			break;
+		}
+		case spl.TokenInstruction.Burn: {
+			const decodedIx = spl.decodeBurnInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "burn",
+				accounts: [
+					{ name: "burnFrom", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()) },
+			} as ParsedIdlInstruction<SplToken22, "burn">;
+			break;
+		}
+		case spl.TokenInstruction.CloseAccount: {
+			const decodedIx = spl.decodeCloseAccountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "closeAccount",
+				accounts: [
+					{ name: "account", ...decodedIx.keys.account },
+					{ name: "destination", ...decodedIx.keys.destination },
+					{ name: "owner", ...decodedIx.keys.authority },
+					...multisig,
+				],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "closeAccount">;
+			break;
+		}
+		case spl.TokenInstruction.FreezeAccount: {
+			const decodedIx = spl.decodeFreezeAccountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "freezeAccount",
+				accounts: [
+					{ name: "account", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "authority", ...decodedIx.keys.authority },
+					...multisig,
+				],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "freezeAccount">;
+			break;
+		}
+		case spl.TokenInstruction.ThawAccount: {
+			const decodedIx = spl.decodeThawAccountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "thawAccount",
+				accounts: [
+					{ name: "account", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "authority", ...decodedIx.keys.authority },
+					...multisig,
+				],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "thawAccount">;
+			break;
+		}
+		case spl.TokenInstruction.TransferChecked: {
+			const decodedIx = spl.decodeTransferCheckedInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "transferChecked",
+				accounts: [
+					{ name: "source", ...decodedIx.keys.source },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "destination", ...decodedIx.keys.destination },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
+			} as ParsedIdlInstruction<SplToken22, "transferChecked">;
+			break;
+		}
+		case spl.TokenInstruction.ApproveChecked: {
+			const decodedIx = spl.decodeApproveCheckedInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "approveChecked",
+				accounts: [
+					{ name: "source", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "delegate", ...decodedIx.keys.delegate },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
+			} as ParsedIdlInstruction<SplToken22, "approveChecked">;
+			break;
+		}
+		case spl.TokenInstruction.MintToChecked: {
+			const decodedIx = spl.decodeMintToCheckedInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "mintToChecked",
+				accounts: [
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "mintTo", ...decodedIx.keys.destination },
+					{ name: "authority", ...decodedIx.keys.authority },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
+			} as ParsedIdlInstruction<SplToken22, "mintToChecked">;
+			break;
+		}
+		case spl.TokenInstruction.BurnChecked: {
+			const decodedIx = spl.decodeBurnCheckedInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "burnChecked",
+				accounts: [
+					{ name: "burnFrom", ...decodedIx.keys.account },
+					{ name: "tokenMint", ...decodedIx.keys.mint },
+					{ name: "owner", ...decodedIx.keys.owner },
+					...multisig,
+				],
+				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
+			} as ParsedIdlInstruction<SplToken22, "burnChecked">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeAccount2: {
+			interface InitializeAccount2InstructionData {
+				instruction: spl.TokenInstruction.InitializeAccount2;
+				owner: Uint8Array;
+			}
+
+			const initializeAccount2InstructionData = struct<InitializeAccount2InstructionData>([u8("instruction"), blob(32, "owner")]);
+
+			const decodedIx = initializeAccount2InstructionData.decode(instruction.data);
+			parsed = {
+				name: "initializeAccount2",
+				accounts: [
+					{ name: "newAccount", ...instruction.keys[0] },
+					{ name: "tokenMint", ...instruction.keys[1] },
+					{ name: "rentSysvar", ...instruction.keys[2] },
+				],
+				args: { owner: new PublicKey(decodedIx.owner) },
+			} as ParsedIdlInstruction<SplToken22, "initializeAccount2">;
+			break;
+		}
+		case spl.TokenInstruction.SyncNative: {
+			parsed = {
+				name: "syncNative",
+				accounts: [{ name: "account", ...instruction.keys[0] }],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "syncNative">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeAccount3: {
+			interface InitializeAccount3InstructionData {
+				instruction: spl.TokenInstruction.InitializeAccount3;
+				owner: Uint8Array;
+			}
+
+			const initializeAccount3InstructionData = struct<InitializeAccount3InstructionData>([u8("instruction"), blob(32, "owner")]);
+
+			const decodedIx = initializeAccount3InstructionData.decode(instruction.data);
+			parsed = {
+				name: "initializeAccount3",
+				accounts: [
+					{ name: "newAccount", ...instruction.keys[0] },
+					{ name: "tokenMint", ...instruction.keys[1] },
+				],
+				args: { owner: new PublicKey(decodedIx.owner) },
+			} as ParsedIdlInstruction<SplToken22, "initializeAccount3">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeMultisig2: {
+			const multisig = instruction.keys.slice(1).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			parsed = {
+				name: "initializeMultisig2",
+				accounts: [{ name: "multisig", ...instruction.keys[0] }, ...multisig],
+				args: { m: instruction.data[1] },
+			} as ParsedIdlInstruction<SplToken22, "initializeMultisig2">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeMint2: {
+			const decodedIx = spl.decodeInitializeMintInstructionUnchecked(instruction);
+			const tokenMint = decodedIx.keys.mint;
+			if (!tokenMint) throw new Error(`Failed to parse InitializeMint2 instruction`);
+			parsed = {
+				name: "initializeMint2",
+				accounts: [{ name: "tokenMint", ...decodedIx.keys.mint }],
+				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
+			} as ParsedIdlInstruction<SplToken22, "initializeMint2">;
+			break;
+		}
+		case spl.TokenInstruction.GetAccountDataSize: {
+			const tokenMint = instruction.keys[0].pubkey;
+			if (!tokenMint) throw new Error(`Failed to parse GetAccountDataSize instruction`);
+			const instructionData = getAccountDataSizeLayout.decode(instruction.data);
+			parsed = {
+				name: "getAccountDataSize",
+				accounts: [{ name: "mint", ...instruction.keys[0] }],
+				args: { extensionTypes: instructionData.extensions.map((ext) => spl.ExtensionType[ext]) },
+			} as unknown as ParsedIdlInstruction<SplToken22, "getAccountDataSize">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeImmutableOwner: {
+			const decodedIx = spl.decodeInitializeImmutableOwnerInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const account = decodedIx.keys.account;
+			if (!account) throw new Error(`Failed to parse InitializeImmutableOwner instruction`);
+			parsed = {
+				name: "initializeImmutableOwner",
+				accounts: [{ name: "account", ...decodedIx.keys.account }],
+				args: {},
+			} as ParsedIdlInstruction<SplToken22, "initializeImmutableOwner">;
+			break;
+		}
+		case spl.TokenInstruction.AmountToUiAmount: {
+			const decodedIx = spl.decodeAmountToUiAmountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const tokenMint = decodedIx.keys.mint;
+			if (!tokenMint) throw new Error(`Failed to parse AmountToUiAmount instruction`);
+			parsed = {
+				name: "amountToUiAmount",
+				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+				args: { amount: new BN(decodedIx.data.amount.toString()) },
+			} as ParsedIdlInstruction<SplToken22, "amountToUiAmount">;
+			break;
+		}
+		case spl.TokenInstruction.UiAmountToAmount: {
+			const decodedIx = spl.decodeUiAmountToAmountInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const tokenMint = decodedIx.keys.mint;
+			if (!tokenMint) throw new Error(`Failed to parse UiAmountToAmount instruction`);
+			parsed = {
+				name: "uiAmountToAmount",
+				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+				args: { uiAmount: decodedIx.data.amount },
+			} as ParsedIdlInstruction<SplToken22, "uiAmountToAmount">;
+			break;
+		}
+		case spl.TokenInstruction.InitializeMintCloseAuthority: {
+			const decodedIx = spl.decodeInitializeMintCloseAuthorityInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			const tokenMint = decodedIx.keys.mint;
+			if (!tokenMint) throw new Error(`Failed to parse InitializeMintCloseAuthority instruction`);
+			parsed = {
+				name: "initializeMintCloseAuthority",
+				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+				args: { closeAuthority: decodedIx.data.closeAuthority },
+			} as ParsedIdlInstruction<SplToken22, "initializeMintCloseAuthority">;
+			break;
+		}
+		case spl.TokenInstruction.TransferFeeExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.TransferFeeInstruction.InitializeTransferFeeConfig: {
+					const decodedIx = spl.decodeInitializeTransferFeeConfigInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeTransferFeeConfig instruction`);
+					parsed = {
+						name: "initializeTransferFeeConfig",
+						accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+						args: {
+							transferFeeConfigAuthority: decodedIx.data.transferFeeConfigAuthority,
+							withdrawWithheldAuthority: decodedIx.data.withdrawWithheldAuthority,
+							transferFeeBasisPoints: decodedIx.data.transferFeeBasisPoints,
+							maximumFee: decodedIx.data.maximumFee,
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.TransferFeeInstruction.TransferCheckedWithFee: {
+					const decodedIx = spl.decodeTransferCheckedWithFeeInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse TransferCheckedWithFee instruction`);
+					parsed = {
+						name: "transferCheckedWithFee",
+						accounts: [
+							{ name: "source", ...decodedIx.keys.source },
+							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "destination", ...decodedIx.keys.destination },
+							{ name: "authority", ...decodedIx.keys.authority },
+						],
+						args: {
+							amount: decodedIx.data.amount,
+							decimals: decodedIx.data.decimals,
+							fee: decodedIx.data.fee,
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					break;
+				}
+				case spl.TransferFeeInstruction.WithdrawWithheldTokensFromMint: {
+					const decodedIx = spl.decodeWithdrawWithheldTokensFromMintInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse WithdrawWithheldTokensFromMint instruction`);
+					parsed = {
+						name: "withdrawWithheldTokensFromMint",
+						accounts: [
+							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "destination", ...decodedIx.keys.destination },
+							{ name: "authority", ...decodedIx.keys.authority },
+						],
+						args: {},
+					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					break;
+				}
+				case spl.TransferFeeInstruction.WithdrawWithheldTokensFromAccounts: {
+					const decodedIx = spl.decodeWithdrawWithheldTokensFromAccountsInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse WithdrawWithheldTokensFromAccounts instruction`);
+					parsed = {
+						name: "withdrawWithheldTokensFromAccounts",
+						accounts: [
+							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "destination", ...decodedIx.keys.destination },
+							{ name: "authority", ...decodedIx.keys.authority },
+						],
+						args: {},
+					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					if (decodedIx.keys.sources) {
+						const multisig = decodedIx.keys.sources.map((meta, idx) => ({ name: `source_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					break;
+				}
+				case spl.TransferFeeInstruction.HarvestWithheldTokensToMint: {
+					const decodedIx = spl.decodeHarvestWithheldTokensToMintInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse HarvestWithheldTokensToMint instruction`);
+					parsed = {
+						name: "harvestWithheldTokensToMint",
+						accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+						args: {},
+					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.sources) {
+						const multisig = decodedIx.keys.sources.map((meta, idx) => ({ name: `source_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					break;
+				}
+				case spl.TransferFeeInstruction.SetTransferFee: {
+					const decodedIx = decodeSetTransferFeeInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+					const tokenMint = decodedIx.keys.mint;
+					if (!tokenMint) throw new Error(`Failed to parse SetTransferFee instruction`);
+					parsed = {
+						name: "setTransferFee",
+						accounts: [
+							{ name: "mint", ...decodedIx.keys.mint },
+							{ name: "authority", ...decodedIx.keys.authority },
+						],
+						args: { transferFeeBasisPoints: decodedIx.data.transferFeeBasisPoints, maximumFee: decodedIx.data.maximumFee },
+					} as unknown as ParsedIdlInstruction<any>;
+					if (decodedIx.keys.signers) {
+						const multisig = decodedIx.keys.signers.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+						parsed.accounts.push(...multisig);
+					}
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		case spl.TokenInstruction.DefaultAccountStateExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.DefaultAccountStateInstruction.Initialize: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeDefaultAccountState instruction`);
+					const instructionData = spl.defaultAccountStateInstructionData.decode(instruction.data);
+					parsed = {
+						name: "initializeDefaultAccountState",
+						accounts: [{ name: "mint", ...instruction.keys[0] }],
+						args: { accountState: spl.AccountState[instructionData.accountState] },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.DefaultAccountStateInstruction.Update: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse UpdateDefaultAccountState instruction`);
+					const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+					const instructionData = spl.defaultAccountStateInstructionData.decode(instruction.data);
+					parsed = {
+						name: "updateDefaultAccountState",
+						accounts: [{ name: "mint", ...instruction.keys[0] }, { name: "freezeAuthority", ...instruction.keys[1] }, { ...multisig }],
+						args: { accountState: spl.AccountState[instructionData.accountState] },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		case spl.TokenInstruction.MemoTransferExtension: {
+			const account = instruction.keys[0].pubkey;
+			if (!account) throw new Error(`Failed to parse MemoTransfersInstruction instruction`);
+			const instructionData = spl.memoTransferInstructionData.decode(instruction.data);
+			parsed = {
+				name: "memoTransfersInstruction",
+				accounts: [{ name: "account", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...instruction.keys.slice(2) }],
+				args: { memoTransferInstruction: spl.MemoTransferInstruction[instructionData.memoTransferInstruction] },
+			} as unknown as ParsedIdlInstruction<any>;
+			break;
+		}
+		case spl.TokenInstruction.CreateNativeMint: {
+			const payer = instruction.keys[0].pubkey;
+			if (!payer) throw new Error(`Failed to parse CreateNativeMint instruction`);
+			parsed = {
+				name: "createNativeMint",
+				accounts: [
+					{ name: "payer", ...instruction.keys[0] },
+					{ name: "nativeMintId", ...instruction.keys[1] },
+					{ name: "systemProgram", ...instruction.keys[2] },
+				],
+				args: {},
+			} as unknown as ParsedIdlInstruction<any>;
+			break;
+		}
+		case spl.TokenInstruction.InitializeNonTransferableMint: {
+			const mint = instruction.keys[0].pubkey;
+			if (!mint) throw new Error(`Failed to parse InitializeNonTransferableMint instruction`);
+			parsed = {
+				name: "initializeNonTransferableMint",
+				accounts: [{ name: "mint", ...instruction.keys[0] }],
+				args: {},
+			} as unknown as ParsedIdlInstruction<any>;
+			break;
+		}
+		case spl.TokenInstruction.CpiGuardExtension: {
+			const account = instruction.keys[0].pubkey;
+			if (!account) throw new Error(`Failed to parse CreateCpiGuardInstruction instruction`);
+			const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+			const instructionData = spl.cpiGuardInstructionData.decode(instruction.data);
+			parsed = {
+				name: "createCpiGuardInstruction",
+				accounts: [{ name: "account", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...multisig }],
+				args: { cpiGuardInstruction: spl.CpiGuardInstruction[instructionData.cpiGuardInstruction] },
+			} as unknown as ParsedIdlInstruction<any>;
+			break;
+		}
+		case spl.TokenInstruction.InitializePermanentDelegate: {
+			const mint = instruction.keys[0].pubkey;
+			if (!mint) throw new Error(`Failed to parse InitializePermanentDelegate instruction`);
+			const decodedIx = spl.decodeInitializePermanentDelegateInstruction(instruction, spl.TOKEN_2022_PROGRAM_ID);
+			parsed = {
+				name: "initializePermanentDelegate",
+				accounts: [{ name: "account", ...decodedIx.keys.mint }],
+				args: { delegate: decodedIx.data.delegate },
+			} as unknown as ParsedIdlInstruction<any>;
+			break;
+		}
+		case spl.TokenInstruction.TransferHookExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.TransferHookInstruction.Initialize: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeTransferHook instruction`);
+					const instructionData = spl.initializeTransferHookInstructionData.decode(instruction.data);
+					parsed = {
+						name: "initializeTransferHook",
+						accounts: [{ name: "mint", ...instruction.keys[0] }],
+						args: { authority: instructionData.authority, transferHookProgramId: instructionData.transferHookProgramId },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.TransferHookInstruction.Update: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse UpdateTransferHook instruction`);
+					const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+					const instructionData = spl.updateTransferHookInstructionData.decode(instruction.data);
+					parsed = {
+						name: "updateTransferHook",
+						accounts: [{ name: "mint", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...multisig }],
+						args: { transferHookProgramId: instructionData.transferHookProgramId },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		case spl.TokenInstruction.MetadataPointerExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.MetadataPointerInstruction.Initialize: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeMetadataPointer instruction`);
+					const instructionData = spl.initializeMetadataPointerData.decode(instruction.data);
+					parsed = {
+						name: "initializeMetadataPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }],
+						args: { authority: instructionData.authority, metadataAddress: instructionData.metadataAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.MetadataPointerInstruction.Update: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse UpdateMetadataPointer instruction`);
+					const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+					const instructionData = spl.updateMetadataPointerData.decode(instruction.data);
+					parsed = {
+						name: "updateMetadataPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...multisig }],
+						args: { metadataAddress: instructionData.metadataAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		case spl.TokenInstruction.GroupPointerExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.GroupPointerInstruction.Initialize: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeGroupPointer instruction`);
+					const instructionData = spl.initializeGroupPointerData.decode(instruction.data);
+					parsed = {
+						name: "initializeGroupPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }],
+						args: { authority: instructionData.authority, groupAddress: instructionData.groupAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.GroupPointerInstruction.Update: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse UpdateGroupPointer instruction`);
+					const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+					const instructionData = spl.updateGroupPointerData.decode(instruction.data);
+					parsed = {
+						name: "updateGroupPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...multisig }],
+						args: { groupAddress: instructionData.groupAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		case spl.TokenInstruction.GroupMemberPointerExtension: {
+			const discriminator = u8().decode(instruction.data.slice(1));
+			switch (discriminator) {
+				case spl.GroupMemberPointerInstruction.Initialize: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse InitializeGroupMemberPointer instruction`);
+					const instructionData = spl.initializeGroupMemberPointerData.decode(instruction.data);
+					parsed = {
+						name: "initializeGroupMemberPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }],
+						args: { authority: instructionData.authority, memberAddress: instructionData.memberAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case spl.GroupMemberPointerInstruction.Update: {
+					const tokenMint = instruction.keys[0].pubkey;
+					if (!tokenMint) throw new Error(`Failed to parse UpdateGroupMemberPointer instruction`);
+					const multisig = instruction.keys.slice(2).map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
+					const instructionData = spl.updateGroupMemberPointerData.decode(instruction.data);
+					parsed = {
+						name: "updateGroupMemberPointer",
+						accounts: [{ name: "mint", ...instruction.keys[0] }, { name: "authority", ...instruction.keys[1] }, { ...multisig }],
+						args: { memberAddress: instructionData.memberAddress },
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default: {
+					parsed = null;
+					break;
+				}
+			}
+			break;
+		}
+		default: {
+			const discriminator = instruction.data.slice(0, 8).toString("hex");
+			const [splDiscriminateInit, splDiscriminateUpdating, splDiscriminateRemove, splDiscriminateUpdate, splDiscriminateEmitter] = await Promise.all([
+				splDiscriminate("spl_token_metadata_interface:initialize_account"),
+				splDiscriminate("spl_token_metadata_interface:updating_field"),
+				splDiscriminate("spl_token_metadata_interface:remove_key_ix"),
+				splDiscriminate("spl_token_metadata_interface:update_the_authority"),
+				splDiscriminate("spl_token_metadata_interface:emitter"),
+			]);
+
+			switch (discriminator) {
+				case splDiscriminateInit.toString("hex"): {
+					const metadata = metadataLayout.decode(instruction.data);
+					parsed = {
+						name: "initializeMetadata",
+						accounts: [
+							{ name: "metadata", ...instruction.keys[0] },
+							{ name: "updateAuthority", ...instruction.keys[1] },
+							{ name: "mint", ...instruction.keys[2] },
+							{ name: "mintAuthority", ...instruction.keys[3] },
+						],
+						args: {
+							name: metadata.name,
+							symbol: metadata.symbol,
+							uri: metadata.uri,
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case splDiscriminateUpdating.toString("hex"): {
+					const data = updateMetadataLayout.decode(instruction.data);
+					parsed = {
+						name: "updateField",
+						accounts: [
+							{ name: "metadata", ...instruction.keys[0] },
+							{ name: "updateAuthority", ...instruction.keys[1] },
+						],
+						args: {
+							field: data.field,
+							value: data.value,
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case splDiscriminateRemove.toString("hex"): {
+					const data = removeKeyLayout.decode(instruction.data);
+					parsed = {
+						name: "removeKey",
+						accounts: [
+							{ name: "metadata", ...instruction.keys[0] },
+							{ name: "updateAuthority", ...instruction.keys[1] },
+						],
+						args: {
+							idempotent: data.idempotent,
+							value: data.key,
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case splDiscriminateUpdate.toString("hex"): {
+					const data = updateAuthorityLayout.decode(instruction.data);
+					parsed = {
+						name: "updateAuthority",
+						accounts: [
+							{ name: "metadata", ...instruction.keys[0] },
+							{ name: "oldAuthority", ...instruction.keys[1] },
+						],
+						args: {
+							newAuthority: new PublicKey(data.newAuthority),
+						},
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				case splDiscriminateEmitter.toString("hex"): {
+					const data = emitLayout.decode(instruction.data);
+					parsed = {
+						name: "emit",
+						accounts: [{ name: "metadata", ...instruction.keys[0] }],
+						args: data,
+					} as unknown as ParsedIdlInstruction<any>;
+					break;
+				}
+				default:
+					parsed = null;
+			}
+			break;
+		}
+	}
+
+	return parsed
+		? { ...parsed, programId: spl.TOKEN_2022_PROGRAM_ID }
+		: { programId: spl.TOKEN_2022_PROGRAM_ID, name: "unknown", accounts: instruction.keys, args: { unknown: instruction.data } };
 }
 
 function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<AssociatedTokenProgramIdlLike> {
