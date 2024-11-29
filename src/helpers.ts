@@ -285,8 +285,6 @@ function generateLogsParsingRegex() {
 (?<programReturn>^Program return: (?<returnProgramId>[1-9A-HJ-NP-Za-km-z]{32,}) (?<returnMessage>.*)$)|\
 (?<errorMessage>^(${knownMsgs.map(prepareLineForRegex).join("|")})$)`;
 
-	console.log(regexTemplate);
-
 	return new RegExp(regexTemplate, "s");
 }
 
@@ -301,6 +299,18 @@ type FullLogContext = {
 	callStack: string[];
 	callIds: number[];
 };
+
+export enum ParsedErrors {
+	InsufficientLamports = "InsufficientLamports",
+}
+
+function getParsedError(log: string): ParsedErrors | null {
+	if (/insufficient lamports/.test(log)) {
+		return ParsedErrors.InsufficientLamports;
+	} else {
+		return null;
+	}
+}
 
 function programEnter(context: FullLogContext, invokedProgram: string, invokeLevel: number): ProgramLogContext {
 	if (invokeLevel != context.immediate.currentDepth + 1)
@@ -400,6 +410,12 @@ export function parseLogs(logs: string[]): ProgramLogContext[] {
 				programLogs[currentCall].invokeResult = match.groups.returnMessage;
 			} else if (match.groups.errorMessage) {
 				programLogs[currentCall].errors.push(log);
+
+				const parsedError = getParsedError(log);
+
+				if (parsedError) {
+					programLogs[currentCall].parsedError = parsedError;
+				}
 			}
 		}
 	}
@@ -408,7 +424,7 @@ export function parseLogs(logs: string[]): ProgramLogContext[] {
 }
 
 /** Python script to extract native solana logs
- * 
+ *
  # coding=utf8
 # the above tag defines encoding for this document and is for Python 2.x compatibility
 
@@ -431,7 +447,7 @@ def open_files_in_directory(directory):
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
                     print(f'Opened file: {file_path}')
-                    content = file.read() 
+                    content = file.read()
                     print_logs(content)
             except Exception as e:
                 print(f'Could not open file {file_path}: {e}')
