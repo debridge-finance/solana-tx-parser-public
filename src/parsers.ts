@@ -676,10 +676,10 @@ async function decodeToken2022Instruction(instruction: TransactionInstruction): 
 			parsed = {
 				name: "initialize_mint",
 				accounts: [
-					{ name: "tokenMint", ...decodedIx.keys.mint },
-					{ name: "rentSysvar", ...decodedIx.keys.rent },
+					{ name: "mint", ...decodedIx.keys.mint },
+					{ name: "rent", ...decodedIx.keys.rent },
 				],
-				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
+				args: { decimals: decodedIx.data.decimals, mint_authority: decodedIx.data.mintAuthority, freeze_authority: decodedIx.data.freezeAuthority },
 			} as ParsedIdlInstruction<SplToken22, "initialize_mint">;
 			break;
 		}
@@ -752,8 +752,8 @@ async function decodeToken2022Instruction(instruction: TransactionInstruction): 
 			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
 			parsed = {
 				name: "set_authority",
-				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
-				args: { authorityType: Number(decodedIx.data.authorityType), newAuthority: decodedIx.data.newAuthority },
+				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "current_authority", ...decodedIx.keys.currentAuthority }, ...multisig],
+				args: { authority_type: Number(decodedIx.data.authorityType), new_authority: decodedIx.data.newAuthority },
 				programId: spl.TOKEN_2022_PROGRAM_ID,
 			} as ParsedIdlInstruction<SplToken22, "set_authority">;
 			break;
@@ -957,8 +957,8 @@ async function decodeToken2022Instruction(instruction: TransactionInstruction): 
 			if (!tokenMint) throw new Error(`Failed to parse InitializeMint2 instruction`);
 			parsed = {
 				name: "initialize_mint2",
-				accounts: [{ name: "tokenMint", ...decodedIx.keys.mint }],
-				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
+				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
+				args: { decimals: decodedIx.data.decimals, mint_authority: decodedIx.data.mintAuthority, freeze_authority: decodedIx.data.freezeAuthority },
 			} as ParsedIdlInstruction<SplToken22, "initialize_mint2">;
 			break;
 		}
@@ -1002,7 +1002,7 @@ async function decodeToken2022Instruction(instruction: TransactionInstruction): 
 			parsed = {
 				name: "ui_amount_to_amount",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
-				args: { uiAmount: decodedIx.data.amount },
+				args: { ui_amount: decodedIx.data.amount },
 			} as ParsedIdlInstruction<SplToken22, "ui_amount_to_amount">;
 			break;
 		}
@@ -1013,7 +1013,7 @@ async function decodeToken2022Instruction(instruction: TransactionInstruction): 
 			parsed = {
 				name: "initialize_mint_close_authority",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
-				args: { closeAuthority: decodedIx.data.closeAuthority },
+				args: { close_authority: decodedIx.data.closeAuthority },
 			} as ParsedIdlInstruction<SplToken22, "initialize_mint_close_authority">;
 			break;
 		}
