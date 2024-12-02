@@ -192,7 +192,7 @@ function decodeTokenInstruction(instruction) {
     const decoded = (0, buffer_layout_1.u8)().decode(instruction.data);
     switch (decoded) {
         case spl_token_1.TokenInstruction.InitializeMint: {
-            const decodedIx = (0, spl_token_1.decodeInitializeMintInstruction)(instruction);
+            const decodedIx = (0, spl_token_1.decodeInitializeMintInstructionUnchecked)(instruction);
             parsed = {
                 name: "initializeMint",
                 accounts: [
@@ -275,10 +275,14 @@ function decodeTokenInstruction(instruction) {
                 [spl_token_1.AuthorityType.FreezeAccount]: { freezeAccount: {} },
                 [spl_token_1.AuthorityType.MintTokens]: { mintTokens: {} },
             };
+            if (![spl_token_1.AuthorityType.AccountOwner, spl_token_1.AuthorityType.CloseAccount, spl_token_1.AuthorityType.FreezeAccount, spl_token_1.AuthorityType.MintTokens].includes(decodedIx.data.authorityType)) {
+                throw new Error('Unexpected authority type for token program');
+            }
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "setAuthority",
                 accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
+                // @ts-ignore
                 args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
             };
             break;

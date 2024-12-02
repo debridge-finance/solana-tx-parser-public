@@ -27,7 +27,7 @@ import {
 	decodeCloseAccountInstruction,
 	decodeFreezeAccountInstruction,
 	decodeInitializeAccountInstruction,
-	decodeInitializeMintInstruction,
+	// decodeInitializeMintInstruction,
 	decodeInitializeMintInstructionUnchecked,
 	decodeInitializeMultisigInstruction,
 	decodeMintToCheckedInstruction,
@@ -246,7 +246,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 	const decoded = u8().decode(instruction.data);
 	switch (decoded) {
 		case TokenInstruction.InitializeMint: {
-			const decodedIx = decodeInitializeMintInstruction(instruction);
+			const decodedIx = decodeInitializeMintInstructionUnchecked(instruction);
 			parsed = {
 				name: "initializeMint",
 				accounts: [
@@ -329,10 +329,14 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				[AuthorityType.FreezeAccount]: { freezeAccount: {} },
 				[AuthorityType.MintTokens]: { mintTokens: {} },
 			};
+			if (![AuthorityType.AccountOwner, AuthorityType.CloseAccount, AuthorityType.FreezeAccount, AuthorityType.MintTokens].includes(decodedIx.data.authorityType)) {
+				throw new Error('Unexpected authority type for token program')
+			}
 			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
 			parsed = {
 				name: "setAuthority",
 				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
+				// @ts-ignore
 				args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
 			} as ParsedIdlInstruction<SplToken, "setAuthority">;
 			break;

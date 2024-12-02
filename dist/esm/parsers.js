@@ -1,6 +1,8 @@
 import { Buffer } from "buffer";
 import { PublicKey, SystemInstruction, SystemProgram, Transaction, } from "@solana/web3.js";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, AuthorityType, TOKEN_PROGRAM_ID, TokenInstruction, decodeApproveCheckedInstruction, decodeApproveInstruction, decodeBurnCheckedInstruction, decodeBurnInstruction, decodeCloseAccountInstruction, decodeFreezeAccountInstruction, decodeInitializeAccountInstruction, decodeInitializeMintInstruction, decodeInitializeMintInstructionUnchecked, decodeInitializeMultisigInstruction, decodeMintToCheckedInstruction, decodeMintToInstruction, decodeRevokeInstruction, decodeSetAuthorityInstruction, decodeThawAccountInstruction, decodeTransferCheckedInstruction, decodeTransferInstruction, } from "@solana/spl-token";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, AuthorityType, TOKEN_PROGRAM_ID, TokenInstruction, decodeApproveCheckedInstruction, decodeApproveInstruction, decodeBurnCheckedInstruction, decodeBurnInstruction, decodeCloseAccountInstruction, decodeFreezeAccountInstruction, decodeInitializeAccountInstruction, 
+// decodeInitializeMintInstruction,
+decodeInitializeMintInstructionUnchecked, decodeInitializeMultisigInstruction, decodeMintToCheckedInstruction, decodeMintToInstruction, decodeRevokeInstruction, decodeSetAuthorityInstruction, decodeThawAccountInstruction, decodeTransferCheckedInstruction, decodeTransferInstruction, } from "@solana/spl-token";
 import { BN, BorshInstructionCoder } from "@coral-xyz/anchor";
 import { blob, struct, u8 } from "@solana/buffer-layout";
 import { compiledInstructionToInstruction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts } from "./helpers";
@@ -189,7 +191,7 @@ function decodeTokenInstruction(instruction) {
     const decoded = u8().decode(instruction.data);
     switch (decoded) {
         case TokenInstruction.InitializeMint: {
-            const decodedIx = decodeInitializeMintInstruction(instruction);
+            const decodedIx = decodeInitializeMintInstructionUnchecked(instruction);
             parsed = {
                 name: "initializeMint",
                 accounts: [
@@ -272,10 +274,14 @@ function decodeTokenInstruction(instruction) {
                 [AuthorityType.FreezeAccount]: { freezeAccount: {} },
                 [AuthorityType.MintTokens]: { mintTokens: {} },
             };
+            if (![AuthorityType.AccountOwner, AuthorityType.CloseAccount, AuthorityType.FreezeAccount, AuthorityType.MintTokens].includes(decodedIx.data.authorityType)) {
+                throw new Error('Unexpected authority type for token program');
+            }
             const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
             parsed = {
                 name: "setAuthority",
                 accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
+                // @ts-ignore
                 args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
             };
             break;
