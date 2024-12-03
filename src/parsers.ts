@@ -29,6 +29,7 @@ import {
 	decodeFreezeAccountInstruction,
 	decodeInitializeAccountInstruction,
 	decodeInitializeMintInstruction,
+	decodeInitializeMintInstructionUnchecked,
 	decodeInitializeMultisigInstruction,
 	decodeMintToCheckedInstruction,
 	decodeMintToInstruction,
@@ -259,21 +260,21 @@ function decodeSystemInstruction(instruction: TransactionInstruction): ParsedIns
 		? {
 				...parsed,
 				programId: SystemProgram.programId,
-			}
+		  }
 		: {
 				programId: SystemProgram.programId,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-			};
+		  };
 }
 
 function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<SplToken> {
-	let parsed: ParsedIdlInstruction<SplToken> | null = null;
+	let parsed: ParsedIdlInstruction<SplToken> | null;
 	const decoded = u8().decode(instruction.data);
 	switch (decoded) {
 		case TokenInstruction.InitializeMint: {
-			const decodedIx = decodeInitializeMintInstruction(instruction);
+			const decodedIx = decodeInitializeMintInstructionUnchecked(instruction);
 			parsed = {
 				name: "initializeMint",
 				accounts: [
@@ -350,14 +351,21 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		}
 		case TokenInstruction.SetAuthority: {
 			const decodedIx = decodeSetAuthorityInstruction(instruction);
-			const originalAuthorityEnumKeys = Object.keys(AuthorityType) as (keyof typeof AuthorityType)[];
-			const keysWithAnchorLikeObjects = Object.fromEntries(originalAuthorityEnumKeys.map((k) => [k, { [uncapitalize(k)]: {} }]));
-
+			const authrorityTypeMap = {
+				[AuthorityType.AccountOwner]: { accountOwner: {} },
+				[AuthorityType.CloseAccount]: { closeAccount: {} },
+				[AuthorityType.FreezeAccount]: { freezeAccount: {} },
+				[AuthorityType.MintTokens]: { mintTokens: {} },
+			};
+			if (![AuthorityType.AccountOwner, AuthorityType.CloseAccount, AuthorityType.FreezeAccount, AuthorityType.MintTokens].includes(decodedIx.data.authorityType)) {
+				throw new Error('Unexpected authority type for token program')
+			}
 			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
 			parsed = {
 				name: "setAuthority",
 				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
-				args: { authorityType: keysWithAnchorLikeObjects[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
+				// @ts-ignore
+				args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
 			} as ParsedIdlInstruction<SplToken, "setAuthority">;
 			break;
 		}
@@ -658,13 +666,13 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		? {
 				...parsed,
 				programId: TOKEN_PROGRAM_ID,
-			}
+		  }
 		: {
 				programId: TOKEN_PROGRAM_ID,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-			};
+		  };
 }
 
 async function decodeToken2022Instruction(instruction: TransactionInstruction): Promise<ParsedInstruction<SplToken>> {
