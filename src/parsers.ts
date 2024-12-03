@@ -260,17 +260,17 @@ function decodeSystemInstruction(instruction: TransactionInstruction): ParsedIns
 		? {
 				...parsed,
 				programId: SystemProgram.programId,
-		  }
+			}
 		: {
 				programId: SystemProgram.programId,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-		  };
+			};
 }
 
 function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<SplToken> {
-	let parsed: ParsedIdlInstruction<SplToken> | null;
+	let parsed: ParsedIdlInstruction<SplToken> | null = null;
 	const decoded = u8().decode(instruction.data);
 	switch (decoded) {
 		case TokenInstruction.InitializeMint: {
@@ -357,13 +357,18 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				[AuthorityType.FreezeAccount]: { freezeAccount: {} },
 				[AuthorityType.MintTokens]: { mintTokens: {} },
 			};
-			if (![AuthorityType.AccountOwner, AuthorityType.CloseAccount, AuthorityType.FreezeAccount, AuthorityType.MintTokens].includes(decodedIx.data.authorityType)) {
-				throw new Error('Unexpected authority type for token program')
+			if (
+				![AuthorityType.AccountOwner, AuthorityType.CloseAccount, AuthorityType.FreezeAccount, AuthorityType.MintTokens].includes(
+					decodedIx.data.authorityType,
+				)
+			) {
+				throw new Error("Unexpected authority type for token program");
 			}
 			const multisig = decodedIx.keys.multiSigners.map((meta, idx) => ({ name: `signer_${idx}`, ...meta }));
 			parsed = {
 				name: "setAuthority",
 				accounts: [{ name: "account", ...decodedIx.keys.account }, { name: "currentAuthority", ...decodedIx.keys.currentAuthority }, ...multisig],
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore
 				args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
 			} as ParsedIdlInstruction<SplToken, "setAuthority">;
@@ -666,13 +671,13 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 		? {
 				...parsed,
 				programId: TOKEN_PROGRAM_ID,
-		  }
+			}
 		: {
 				programId: TOKEN_PROGRAM_ID,
 				name: "unknown",
 				accounts: instruction.keys,
 				args: { unknown: instruction.data },
-		  };
+			};
 }
 
 async function decodeToken2022Instruction(instruction: TransactionInstruction): Promise<ParsedInstruction<SplToken>> {
