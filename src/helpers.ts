@@ -1,4 +1,4 @@
-import { utils } from "@coral-xyz/anchor";
+import { Idl, utils } from "@coral-xyz/anchor";
 import {
 	AccountMeta,
 	CompiledInstruction,
@@ -12,10 +12,35 @@ import {
 	VersionedTransactionResponse,
 } from "@solana/web3.js";
 
-import { ProgramLogContext } from "./interfaces";
+import { ParsedAccount, ProgramLogContext } from "./interfaces";
 
-export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
-	return `${s[0].toLocaleLowerCase()}${s.slice(1)}` as Uncapitalize<S>;
+type AccountsList = Idl["instructions"][number]["accounts"];
+
+export function mapIdlAccountsToMeta(accounts: AccountsList, meta: AccountMeta[]) {
+	const result: ParsedAccount[] = [];
+	let metaIdx = 0;
+	function traverse(objList: AccountsList): void {
+		for (const obj of objList) {
+			// Check if we have available numbers
+			if (metaIdx < meta.length) {
+				// Create new object with name and corresponding key
+				const newObj: ParsedAccount = {
+					name: obj.name,
+					...meta[metaIdx++],
+				};
+				result.push(newObj);
+			}
+
+			// If the object has accounts, recurse into them
+			if ("accounts" in obj) {
+				traverse(obj.accounts);
+			}
+		}
+	}
+
+	traverse(accounts);
+
+	return result;
 }
 
 export function hexToBuffer(data: string) {

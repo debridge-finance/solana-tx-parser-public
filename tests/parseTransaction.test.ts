@@ -8,7 +8,6 @@ import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
 import { SolanaParser } from "../src";
 import { ParsedAccount, ParsedIdlInstruction, ParsedInstruction } from "../src/interfaces";
 
-// import { IDL as JupiterIdl, Jupiter } from "./idl/jupiter";
 import { IDL as JupiterV30Idl, JupiterV30 } from "./idl/JupiterV30";
 
 function stringifyAccount(account: ParsedAccount) {
