@@ -7,13 +7,15 @@ import {
 	SystemProgram,
 	Connection,
 	Message,
-	Transaction,
 	AccountMeta,
 	ParsedMessage,
 	PartiallyDecodedInstruction,
 	Finality,
 	VersionedMessage,
 	LoadedAddresses,
+	VersionedTransaction,
+	AddressLookupTableAccount,
+	AccountInfo,
 } from "@solana/web3.js";
 import {
 	ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -74,7 +76,7 @@ import {
 	updateGroupMemberPointerData,
 	decodeSetTransferFeeInstruction,
 } from "@solana/spl-token";
-import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl, utils } from "@coral-xyz/anchor";
+import { BN, BorshInstructionCoder, Idl, SystemProgram as SystemProgramIdl } from "@coral-xyz/anchor";
 import { splDiscriminate } from "@solana/spl-type-length-value";
 
 import {
@@ -1440,7 +1442,7 @@ function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): 
 			{ name: "tokenMint", ...instruction.keys[3] },
 			{ name: "systemProgram", ...instruction.keys[4] },
 			{ name: "tokenProgram", ...instruction.keys[5] },
-			...[instruction.keys.length > 5 ? { name: "rent", ...instruction.keys[6] } : undefined],
+			...[instruction.keys.length > 6 ? { name: "rent", ...instruction.keys[6] } : undefined],
 		],
 		args: {},
 		programId: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -1663,11 +1665,32 @@ export class SolanaParser {
 	 * @param txDump base64-encoded string or raw Buffer which contains tx dump
 	 * @returns list of parsed instructions
 	 */
-	parseTransactionDump(txDump: string | Buffer): ParsedInstruction<Idl, string>[] {
+	async parseTransactionDump(connection: Connection, txDump: string | Buffer): Promise<ParsedInstruction<Idl, string>[]> {
 		if (!(txDump instanceof Buffer)) txDump = Buffer.from(txDump, "base64");
-		const tx = Transaction.from(txDump);
-		const message = tx.compileMessage();
+		const vtx = VersionedTransaction.deserialize(txDump);
+		let loadedAddresses: LoadedAddresses = { writable: [], readonly: [] };
 
-		return this.parseTransactionData(message);
+		if (vtx.version !== "legacy") {
+			const accountsToFetch = vtx.message.addressTableLookups.map((alt) => alt.accountKey);
+			if (accountsToFetch.length > 0) {
+				const fetched = await connection.getMultipleAccountsInfo(accountsToFetch);
+				const altAccounts = fetched
+					.filter((f) => f !== null && f.data.length > 0)
+					.map((f) => AddressLookupTableAccount.deserialize((<AccountInfo<Buffer>>f).data));
+
+				const altWritableAccounts: PublicKey[] = [];
+				const altReadonlyAccounts: PublicKey[] = [];
+				vtx.message.addressTableLookups.map((compiledALT, idx) => {
+					altWritableAccounts.push(...compiledALT.writableIndexes.map((writableIdx) => altAccounts[idx].addresses[writableIdx]));
+					altReadonlyAccounts.push(...compiledALT.readonlyIndexes.map((writableIdx) => altAccounts[idx].addresses[writableIdx]));
+				});
+				loadedAddresses = {
+					readonly: altReadonlyAccounts,
+					writable: altWritableAccounts,
+				};
+			}
+		}
+
+		return this.parseTransactionData(vtx.message, loadedAddresses);
 	}
 }

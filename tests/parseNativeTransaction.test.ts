@@ -17,7 +17,7 @@ describe("Test parse transaction", () => {
 			false,
 		);
 
-		const transfer = parsed?.find((pix) => pix.name === "transfer")! as ParsedIdlInstruction<SplToken, "transfer">;
+		const transfer = parsed?.find((pix) => pix.name === "transfer") as ParsedIdlInstruction<SplToken, "transfer">;
 
 		assert.equal(transfer.args.amount.toString(), "10000");
 	});
@@ -34,8 +34,9 @@ describe("Test parse transaction", () => {
 		assert.equal(Boolean(createATA), true);
 	});
 
-	it("can parse base64 tx", () => {
-		const parsed = parser.parseTransactionDump(
+	it("can parse base64 tx", async () => {
+		const parsed = await parser.parseTransactionDump(
+			rpcConnection,
 			"Ad/g5OAEaHD3s+moNYVi7UI8R1j0SoFnqOvQv2VhmRT+qvzBcNOOdVKI4j6zAAhblJozVESD4xm/lA2bHDuOiwwBAAEEpWj8ArX39WwJz86zDyZtAlZE9cSVTjPRIN58jtbQPZxhpNDI0S/2ZBfLMb6HeLXgaGGz97EK3dyVlkLYtIg5VPpl7O120Zak9/VrCtDtHyWP+nrMkyrs29yWTK7zUYtQBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKmaseti9QY1Urgrk5uy9MkXzPc5i5Vq+PxmDQT6B2833QIDAwECAAkDECcAAAAAAAADAwEAAAEJ",
 		);
 

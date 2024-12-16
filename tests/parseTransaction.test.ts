@@ -8,7 +8,7 @@ import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
 import { SolanaParser } from "../src";
 import { ParsedAccount, ParsedIdlInstruction, ParsedInstruction } from "../src/interfaces";
 
-import { IDL as JupiterV30Idl, JupiterV30 } from "./idl/JupiterV30";
+import { IDL as JupiterV30Idl, JupiterV30 } from "./idl/jupiter_v2";
 
 function stringifyAccount(account: ParsedAccount) {
 	return `${account.name || "unknown"} @ ${account.pubkey.toBase58()}`;

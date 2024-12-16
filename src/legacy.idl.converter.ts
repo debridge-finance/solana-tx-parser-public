@@ -19,7 +19,6 @@ import {
 	IdlTypeDefined,
 } from "@coral-xyz/anchor/dist/cjs/idl";
 import { sha256 } from "@noble/hashes/sha256";
-// import { snakeCase } from 'change-case';
 
 function camelToUnderscore(key: string) {
 	const result = key.replace(/([A-Z])/g, " $1");
@@ -41,7 +40,7 @@ interface LegacyIdl {
 	types: LegacyIdlTypeDefinition[];
 	events?: LegacyIdlEvent[];
 	errors?: LegacyIdlErrorCode[];
-	metadata?: any;
+	metadata?: { address: string };
 }
 
 interface LegacyIdlConst {
@@ -376,7 +375,7 @@ export function convertLegacyIdlToV30(idl: any, programAddress?: string): Idl {
 			case "0.1.0":
 				return idl as Idl;
 			default:
-				throw new Error(`IDL spec not supported: ${spec}`);
+				throw new Error(`IDL spec not supported: ${spec ?? ""}`);
 		}
 	} else {
 		const formattedIdl = convertLegacyIdl(idl as LegacyIdl, programAddress);

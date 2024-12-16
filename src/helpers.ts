@@ -1,4 +1,4 @@
-import { Idl, utils } from "@coral-xyz/anchor";
+import { utils } from "@coral-xyz/anchor";
 import {
 	AccountMeta,
 	CompiledInstruction,
@@ -12,36 +12,7 @@ import {
 	VersionedTransactionResponse,
 } from "@solana/web3.js";
 
-import { ParsedAccount, ProgramLogContext } from "./interfaces";
-
-type AccountsList = Idl["instructions"][number]["accounts"];
-
-export function mapIdlAccountsToMeta(accounts: AccountsList, meta: AccountMeta[]) {
-	const result: ParsedAccount[] = [];
-	let metaIdx = 0;
-	function traverse(objList: AccountsList): void {
-		for (const obj of objList) {
-			// Check if we have available numbers
-			if (metaIdx < meta.length) {
-				// Create new object with name and corresponding key
-				const newObj: ParsedAccount = {
-					name: obj.name,
-					...meta[metaIdx++],
-				};
-				result.push(newObj);
-			}
-
-			// If the object has accounts, recurse into them
-			if ("accounts" in obj) {
-				traverse(obj.accounts);
-			}
-		}
-	}
-
-	traverse(accounts);
-
-	return result;
-}
+import { ProgramLogContext } from "./interfaces";
 
 export function hexToBuffer(data: string) {
 	const rawHex = data.startsWith("0x") ? data.slice(2) : data;
@@ -373,7 +344,6 @@ function programExit(context: FullLogContext, exitedProgram: string): number {
  * @returns parsed logs with call depth and additional context
  */
 export function parseLogs(logs: string[]): ProgramLogContext[] {
-	const debugLog = (...s: any[]) => console.log(s);
 	const parserRe = generateLogsParsingRegex();
 	const programLogs: ProgramLogContext[] = [];
 
