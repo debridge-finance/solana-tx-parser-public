@@ -41,14 +41,14 @@ function customTest() {
 	});
 
 	it("can parse instruction 0", async () => {
-		const parsed = await parser.parseTransaction(connection, ix0Tx);
+		const parsed = await parser.parseTransactionByHash(connection, ix0Tx);
 		if (!parsed) return Promise.reject("failed to get/parse tx");
 		assert.equal(parsed[0].name, "echo");
 		assert.equal((parsed[0].args as { message: string }).message, "test echo message");
 	});
 
 	it("can parse instruction 1", async () => {
-		const parsed = await parser.parseTransaction(connection, ix1Tx);
+		const parsed = await parser.parseTransactionByHash(connection, ix1Tx);
 		if (!parsed) return Promise.reject("failed to get/parse tx");
 
 		assert.equal(parsed[0].name, "sum");

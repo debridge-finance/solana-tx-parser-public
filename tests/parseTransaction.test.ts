@@ -8,7 +8,7 @@ import { PublicKey, Connection, clusterApiUrl } from "@solana/web3.js";
 import { SolanaParser } from "../src";
 import { ParsedAccount, ParsedIdlInstruction, ParsedInstruction } from "../src/interfaces";
 
-import { IDL as JupiterIdl, Jupiter } from "./idl/jupiter";
+import { IDL as JupiterV30Idl, JupiterV30 } from "./idl/jupiter_v2";
 
 function stringifyAccount(account: ParsedAccount) {
 	return `${account.name || "unknown"} @ ${account.pubkey.toBase58()}`;
@@ -52,17 +52,17 @@ function printParsedIx(parsedIx: ParsedInstruction<Idl>) {
 function parseTransactionTest() {
 	it("can parse jupiter tx", async () => {
 		const rpcConnection = new Connection(clusterApiUrl("mainnet-beta"));
-		const txParser = new SolanaParser([{ idl: JupiterIdl as unknown as Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }]);
-		const parsed = await txParser.parseTransaction(
+		const txParser = new SolanaParser([{ idl: JupiterV30Idl, programId: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo" }]);
+		const parsed = await txParser.parseTransactionByHash(
 			rpcConnection,
 			"5zgvxQjV6BisU8SfahqasBZGfXy5HJ3YxYseMBG7VbR4iypDdtdymvE1jmEMG7G39bdVBaHhLYUHUejSTtuZEpEj",
 			false,
 		);
-		parsed?.find((pix) => pix.name === "tokenSwap") as ParsedIdlInstruction<Jupiter, "setTokenLedger">;
+		parsed?.find((pix) => pix.name === "set_token_ledger") as ParsedIdlInstruction<JupiterV30, "set_token_ledger">;
 		parsed?.map((pix) => printParsedIx(pix));
 		if (!parsed || parsed.length != 3) return Promise.reject("Failed to parse transaction correctly");
-		const swap = parsed[1] as ParsedIdlInstruction<Jupiter, "tokenSwap">;
-		assert.equal(swap.args.platformFeeBps.toString(), "0");
+		const swap = parsed[1] as ParsedIdlInstruction<JupiterV30, "token_swap">;
+		assert.equal(swap.args.platform_fee_bps.toString(), "0");
 	});
 }
 

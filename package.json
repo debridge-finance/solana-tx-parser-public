@@ -1,7 +1,7 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
-  "version": "2.0.2",
+  "version": "3.0.0",
   "author": "deBridge",
   "license": "LGPL-2.1",
   "homepage": "https://debridge.finance",
@@ -15,6 +15,7 @@
     "blockchain"
   ],
   "files": [
+    "cli/**",
     "dist/**",
     "docs/**",
     "LICENSE",
@@ -32,8 +33,13 @@
     "prepublishOnly": "npm run build",
     "test:ix": "mocha -r ts-node/register -b -t 200000 ./tests/parseIx.test.ts",
     "test:tx": "mocha -r ts-node/register -t 200000 ./tests/parseTransaction.test.ts",
+    "test:tx:dlnsrc": "mocha -r ts-node/register -t 200000 tests/parseDlnSrcTransaction.test.ts",
+    "test:tx:dlndst": "mocha -r ts-node/register -t 200000 tests/parseDlnDstTransaction.test.ts",
+    "test:tx:native": "mocha -r ts-node/register -t 200000 tests/parseNativeTransaction.test.ts",
+    "test:err": "mocha -r ts-node/register -t 200000 ./tests/error.parsing.test.ts",
     "test:sysTx": "mocha -r ts-node/register -b -t 200000 ./tests/parseSystemTransaction.test.ts",
     "test:custom": "mocha -r ts-node/register -b -t 200000 ./tests/customParser.test.ts",
+    "test:parseLogs": "mocha -r ts-node/register -b -t 200000 ./tests/parseLogs.test.ts",
     "prettify": "prettier --write ./**/*.ts",
     "lint": "eslint --config .eslintrc \"./{src,tests}/**/*.{js,ts}\"",
     "lint:fix": "eslint --config .eslintrc \"./{src,tests}/**/*.{js,ts}\" --fix",
@@ -65,10 +71,13 @@
     "typedoc-plugin-markdown": "^3.15.4"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.29.0",
-    "@coral-xyz/spl-token": "^0.29.0",
-    "@solana/spl-token": "^0.3.8",
-    "@solana/web3.js": "^1.87.0",
+    "@coral-xyz/anchor": "^0.30.1",
+    "@coral-xyz/spl-token": "^0.30.1",
+    "@noble/hashes": "^1.6.1",
+    "@solana/codecs": "2.0.0",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/spl-type-length-value": "0.2.0",
+    "@solana/web3.js": "^1.95.4",
     "buffer": "6.0.3"
   },
   "peerDependencies": {

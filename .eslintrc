@@ -36,6 +36,7 @@
 		"no-console": "warn",
 		"indent": "off",
 		"@typescript-eslint/explicit-module-boundary-types": "off",
+		"@typescript-eslint/no-use-before-define": "off",
 		"@typescript-eslint/no-empty-interface": "off",
 		"@typescript-eslint/no-var-requires": 0,
 		"newline-before-return": 1,

@@ -9,7 +9,7 @@ function parseSysTx() {
 	const parser = new SolanaParser([]);
 	const txId = "35wgJWUiYVRi5xEEEZmeMGiqh2anTjK17UMSp4ZGXpm8wJYxT27MqKzjaRxc3QaNZvxURTdiDmjHP8NQoeoxxe4P";
 	it("can parse system tx", async () => {
-		const parsed = await parser.parseTransaction(connection, txId);
+		const parsed = await parser.parseTransactionByHash(connection, txId);
 		if (!parsed) throw new Error("failed to parse");
 		assert.equal(parsed[0].name, "createAccount");
 		assert.equal(parsed[1].name, "initializeAccount");
