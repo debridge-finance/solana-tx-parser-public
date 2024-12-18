@@ -42,7 +42,7 @@ export type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = 
 export type InstructionParserInfo = [string, ParserFunction<Idl, string>];
 
 export interface ParsedAccount extends AccountMeta {
-	/** Account name, same as in Idl, nested accounts look like `account > nestedAccount` */
+	/** Account name, same as in Idl, nested accounts look like `account.nestedAccount` */
 	name?: string;
 }
 

@@ -98,11 +98,11 @@ export declare type SplToken22 = {
 			];
 			args: [
 				{ name: "decimals"; type: "u8" },
-				{ name: "mint_authority"; type: "pubkey" },
-				{ name: "freeze_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+				{ name: "mintAuthority"; type: "pubkey" },
+				{ name: "freezeAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 			];
 			discriminator: [209, 42, 195, 4, 129, 85, 209, 44];
-			name: "initialize_mint";
+			name: "initializeMint";
 		},
 		{
 			accounts: [
@@ -113,7 +113,7 @@ export declare type SplToken22 = {
 			];
 			args: [];
 			discriminator: [74, 115, 99, 93, 197, 69, 103, 7];
-			name: "initialize_account";
+			name: "initializeAccount";
 		},
 		{
 			accounts: [
@@ -122,7 +122,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "m"; type: "u8" }];
 			discriminator: [220, 130, 117, 21, 27, 227, 78, 213];
-			name: "initialize_multisig";
+			name: "initializeMultisig";
 		},
 		{
 			accounts: [
@@ -160,11 +160,11 @@ export declare type SplToken22 = {
 				{ docs: []; name: "signer"; optional: false; relations: []; signer: true; writable: false },
 			];
 			args: [
-				{ name: "authority_type"; type: { defined: { generics: []; name: "AuthorityType" } } },
-				{ name: "new_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+				{ name: "authorityType"; type: { defined: { generics: []; name: "AuthorityType" } } },
+				{ name: "newAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 			];
 			discriminator: [133, 250, 37, 21, 110, 163, 26, 121];
-			name: "set_authority";
+			name: "setAuthority";
 		},
 		{
 			accounts: [
@@ -174,7 +174,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "amount"; type: "u64" }];
 			discriminator: [241, 34, 48, 186, 37, 179, 123, 192];
-			name: "mint_to";
+			name: "mintTo";
 		},
 		{
 			accounts: [
@@ -194,7 +194,7 @@ export declare type SplToken22 = {
 			];
 			args: [];
 			discriminator: [125, 255, 149, 14, 110, 34, 72, 24];
-			name: "close_account";
+			name: "closeAccount";
 		},
 		{
 			accounts: [
@@ -204,7 +204,7 @@ export declare type SplToken22 = {
 			];
 			args: [];
 			discriminator: [253, 75, 82, 133, 167, 238, 43, 130];
-			name: "freeze_account";
+			name: "freezeAccount";
 		},
 		{
 			accounts: [
@@ -214,7 +214,7 @@ export declare type SplToken22 = {
 			];
 			args: [];
 			discriminator: [115, 152, 79, 213, 213, 169, 184, 35];
-			name: "thaw_account";
+			name: "thawAccount";
 		},
 		{
 			accounts: [
@@ -225,7 +225,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "amount"; type: "u64" }, { name: "decimals"; type: "u8" }];
 			discriminator: [119, 250, 202, 24, 253, 135, 244, 121];
-			name: "transfer_checked";
+			name: "transferChecked";
 		},
 		{
 			accounts: [
@@ -236,7 +236,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "amount"; type: "u64" }, { name: "decimals"; type: "u8" }];
 			discriminator: [47, 197, 254, 42, 58, 201, 58, 109];
-			name: "approve_checked";
+			name: "approveChecked";
 		},
 		{
 			accounts: [
@@ -246,7 +246,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "amount"; type: "u64" }, { name: "decimals"; type: "u8" }];
 			discriminator: [229, 236, 36, 240, 118, 225, 45, 125];
-			name: "mint_to_checked";
+			name: "mintToChecked";
 		},
 		{
 			accounts: [
@@ -256,7 +256,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "amount"; type: "u64" }, { name: "decimals"; type: "u8" }];
 			discriminator: [198, 121, 200, 102, 120, 208, 155, 178];
-			name: "burn_checked";
+			name: "burnChecked";
 		},
 		{
 			accounts: [
@@ -266,13 +266,13 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "owner"; type: "pubkey" }];
 			discriminator: [8, 182, 149, 144, 185, 31, 209, 105];
-			name: "initialize_account2";
+			name: "initializeAccount2";
 		},
 		{
 			accounts: [{ docs: []; name: "account"; optional: false; relations: []; signer: false; writable: true }];
 			args: [];
 			discriminator: [155, 219, 36, 36, 239, 128, 21, 65];
-			name: "sync_native";
+			name: "syncNative";
 		},
 		{
 			accounts: [
@@ -281,7 +281,7 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "owner"; type: "pubkey" }];
 			discriminator: [23, 142, 140, 135, 21, 160, 133, 64];
-			name: "initialize_account3";
+			name: "initializeAccount3";
 		},
 		{
 			accounts: [
@@ -290,93 +290,93 @@ export declare type SplToken22 = {
 			];
 			args: [{ name: "m"; type: "u8" }];
 			discriminator: [81, 239, 73, 39, 27, 148, 2, 146];
-			name: "initialize_multisig2";
+			name: "initializeMultisig2";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: true }];
 			args: [
 				{ name: "decimals"; type: "u8" },
-				{ name: "mint_authority"; type: "pubkey" },
-				{ name: "freeze_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+				{ name: "mintAuthority"; type: "pubkey" },
+				{ name: "freezeAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 			];
 			discriminator: [95, 108, 198, 210, 72, 243, 143, 235];
-			name: "initialize_mint2";
+			name: "initializeMint2";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: false }];
-			args: [{ name: "extension_types"; type: { vec: { defined: { generics: []; name: "ExtensionType" } } } }];
+			args: [{ name: "extensionTypes"; type: { vec: { defined: { generics: []; name: "ExtensionType" } } } }];
 			discriminator: [16, 177, 210, 128, 21, 45, 111, 31];
-			name: "get_account_data_size";
+			name: "getAccountDataSize";
 		},
 		{
-			accounts: [{ docs: []; name: "token_account"; optional: false; relations: []; signer: false; writable: true }];
+			accounts: [{ docs: []; name: "tokenAccount"; optional: false; relations: []; signer: false; writable: true }];
 			args: [];
 			discriminator: [141, 50, 15, 44, 195, 247, 34, 60];
-			name: "initialize_immutable_owner";
+			name: "initializeImmutableOwner";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: false }];
 			args: [{ name: "amount"; type: "u64" }];
 			discriminator: [160, 145, 200, 98, 242, 156, 30, 90];
-			name: "amount_to_ui_amount";
+			name: "amountToUiAmount";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: false }];
-			args: [{ name: "ui_amount"; type: { defined: { generics: []; name: "&'astr" } } }];
+			args: [{ name: "uiAmount"; type: { defined: { generics: []; name: "&'astr" } } }];
 			discriminator: [173, 243, 64, 4, 103, 31, 56, 52];
-			name: "ui_amount_to_amount";
+			name: "uiAmountToAmount";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: true }];
-			args: [{ name: "close_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } }];
+			args: [{ name: "closeAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } }];
 			discriminator: [117, 167, 56, 158, 201, 160, 209, 109];
-			name: "initialize_mint_close_authority";
+			name: "initializeMintCloseAuthority";
 		},
 		{
 			accounts: [
 				{ docs: []; name: "account"; optional: false; relations: []; signer: false; writable: true },
 				{ docs: []; name: "payer"; optional: false; relations: []; signer: true; writable: true },
-				{ docs: []; name: "system_program"; optional: false; relations: []; signer: false; writable: false },
+				{ docs: []; name: "systemProgram"; optional: false; relations: []; signer: false; writable: false },
 				{ docs: []; name: "owner"; optional: false; relations: []; signer: true; writable: false },
 			];
-			args: [{ name: "extension_types"; type: { vec: { defined: { generics: []; name: "ExtensionType" } } } }];
+			args: [{ name: "extensionTypes"; type: { vec: { defined: { generics: []; name: "ExtensionType" } } } }];
 			discriminator: [79, 177, 5, 90, 135, 125, 234, 85];
 			name: "reallocate";
 		},
 		{
 			accounts: [
 				{ docs: []; name: "payer"; optional: false; relations: []; signer: true; writable: true },
-				{ docs: []; name: "crate_native_mint"; optional: false; relations: []; signer: false; writable: true },
-				{ docs: []; name: "system_program"; optional: false; relations: []; signer: false; writable: false },
+				{ docs: []; name: "crateNativeMint"; optional: false; relations: []; signer: false; writable: true },
+				{ docs: []; name: "systemProgram"; optional: false; relations: []; signer: false; writable: false },
 			];
 			args: [];
 			discriminator: [114, 254, 53, 96, 51, 248, 117, 109];
-			name: "create_native_mint";
+			name: "createNativeMint";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: true }];
 			args: [];
 			discriminator: [242, 68, 44, 126, 194, 231, 206, 200];
-			name: "initialize_non_transferable_mint";
+			name: "initializeNonTransferableMint";
 		},
 		{
 			accounts: [{ docs: []; name: "mint"; optional: false; relations: []; signer: false; writable: true }];
 			args: [{ name: "delegate"; type: "pubkey" }];
 			discriminator: [98, 200, 9, 70, 17, 203, 130, 60];
-			name: "initialize_permanent_delegate";
+			name: "initializePermanentDelegate";
 		},
 		{
 			accounts: [
-				{ docs: []; name: "source_account"; optional: false; relations: []; signer: false; writable: true },
-				{ docs: []; name: "destination_account"; optional: false; relations: []; signer: false; writable: true },
+				{ docs: []; name: "sourceAccount"; optional: false; relations: []; signer: false; writable: true },
+				{ docs: []; name: "destinationAccount"; optional: false; relations: []; signer: false; writable: true },
 				{ docs: []; name: "authority"; optional: false; relations: []; signer: true; writable: false },
 			];
 			args: [];
 			discriminator: [221, 166, 235, 25, 123, 95, 232, 59];
-			name: "withdraw_excess_lamports";
+			name: "withdrawExcessLamports";
 		},
 	];
-	metadata: { name: "spl_token_2022"; version: "1.0.0"; spec: "" };
+	metadata: { name: "spl_token_2022"; version: "1.0.0"; spec: "0.1.0" };
 	types: [
 		{ name: "AccountState"; type: { kind: "enum"; variants: [{ name: "Uninitialized" }, { name: "Initialized" }, { name: "Frozen" }] } },
 		{
@@ -441,11 +441,11 @@ export declare type SplToken22 = {
 			name: "Mint";
 			type: {
 				fields: [
-					{ name: "mint_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+					{ name: "mintAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 					{ name: "supply"; type: "u64" },
 					{ name: "decimals"; type: "u8" },
-					{ name: "is_initialized"; type: "bool" },
-					{ name: "freeze_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+					{ name: "isInitialized"; type: "bool" },
+					{ name: "freezeAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 				];
 				kind: "struct";
 			};
@@ -459,9 +459,9 @@ export declare type SplToken22 = {
 					{ name: "amount"; type: "u64" },
 					{ name: "delegate"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 					{ name: "state"; type: { defined: { generics: []; name: "AccountState" } } },
-					{ name: "is_native"; type: { defined: { generics: []; name: "COption<u64>" } } },
-					{ name: "delegated_amount"; type: "u64" },
-					{ name: "close_authority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
+					{ name: "isNative"; type: { defined: { generics: []; name: "COption<u64>" } } },
+					{ name: "delegatedAmount"; type: "u64" },
+					{ name: "closeAuthority"; type: { defined: { generics: []; name: "COption<Pubkey>" } } },
 				];
 				kind: "struct";
 			};
@@ -472,7 +472,7 @@ export declare type SplToken22 = {
 				fields: [
 					{ name: "m"; type: "u8" },
 					{ name: "n"; type: "u8" },
-					{ name: "is_initialized"; type: "bool" },
+					{ name: "isInitialized"; type: "bool" },
 					{ name: "signers"; type: { array: ["pubkey", 11] } },
 				];
 				kind: "struct";

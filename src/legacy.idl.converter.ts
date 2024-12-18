@@ -19,6 +19,7 @@ import {
 	IdlTypeDefined,
 } from "@coral-xyz/anchor/dist/cjs/idl";
 import { sha256 } from "@noble/hashes/sha256";
+import camelcase from "camelcase";
 
 function camelToUnderscore(key: string) {
 	const result = key.replace(/([A-Z])/g, " $1");
@@ -30,7 +31,7 @@ const snakeCase = camelToUnderscore;
 
 // Legacy types based on the Rust structs
 // Should be included in next minor release of anchor
-interface LegacyIdl {
+type LegacyIdl = {
 	version: string;
 	name: string;
 	docs?: string[];
@@ -41,66 +42,66 @@ interface LegacyIdl {
 	events?: LegacyIdlEvent[];
 	errors?: LegacyIdlErrorCode[];
 	metadata?: { address: string };
-}
+};
 
-interface LegacyIdlConst {
+type LegacyIdlConst = {
 	name: string;
 	type: LegacyIdlType;
 	value: string;
-}
+};
 
-interface LegacyIdlInstruction {
+type LegacyIdlInstruction = {
 	name: string;
 	docs?: string[];
 	accounts: LegacyIdlAccountItem[];
 	args: LegacyIdlField[];
 	returns?: LegacyIdlType;
-}
+};
 
-interface LegacyIdlTypeDefinition {
+type LegacyIdlTypeDefinition = {
 	name: string;
 	docs?: string[];
 	type: LegacyIdlTypeDefinitionTy;
-}
+};
 
 type LegacyIdlTypeDefinitionTy =
 	| { kind: "struct"; fields: LegacyIdlField[] }
 	| { kind: "enum"; variants: LegacyIdlEnumVariant[] }
 	| { kind: "alias"; value: LegacyIdlType };
 
-interface LegacyIdlField {
+type LegacyIdlField = {
 	name: string;
 	docs?: string[];
 	type: LegacyIdlType;
-}
+};
 
-interface LegacyIdlEnumVariant {
+type LegacyIdlEnumVariant = {
 	name: string;
 	fields?: LegacyEnumFields;
-}
+};
 
 type LegacyEnumFields = LegacyIdlField[] | LegacyIdlType[];
 
-interface LegacyIdlEvent {
+type LegacyIdlEvent = {
 	name: string;
 	fields: LegacyIdlEventField[];
-}
+};
 
-interface LegacyIdlEventField {
+type LegacyIdlEventField = {
 	name: string;
 	type: LegacyIdlType;
 	index: boolean;
-}
+};
 
-interface LegacyIdlErrorCode {
+type LegacyIdlErrorCode = {
 	code: number;
 	name: string;
 	msg?: string;
-}
+};
 
 type LegacyIdlAccountItem = LegacyIdlAccount | LegacyIdlAccounts;
 
-interface LegacyIdlAccount {
+type LegacyIdlAccount = {
 	name: string;
 	isMut: boolean;
 	isSigner: boolean;
@@ -108,17 +109,17 @@ interface LegacyIdlAccount {
 	docs?: string[];
 	pda?: LegacyIdlPda;
 	relations: string[];
-}
+};
 
-interface LegacyIdlAccounts {
+type LegacyIdlAccounts = {
 	name: string;
 	accounts: LegacyIdlAccountItem[];
-}
+};
 
-interface LegacyIdlPda {
+type LegacyIdlPda = {
 	seeds: LegacyIdlSeed[];
 	programId?: LegacyIdlSeed;
-}
+};
 
 type LegacyIdlSeed =
 	| { kind: "const"; type: LegacyIdlType; value: any }
@@ -167,6 +168,7 @@ function convertLegacyIdl(legacyIdl: LegacyIdl, programAddress?: string): Idl {
 		metadata: {
 			name: legacyIdl.name,
 			version: legacyIdl.version,
+			spec: "0.1.0",
 		} as IdlMetadata,
 		types: [
 			...(legacyIdl.types || []).map(convertTypeDef),
@@ -183,12 +185,12 @@ function getDisc(prefix: string, name: string): number[] {
 }
 
 function convertInstruction(instruction: LegacyIdlInstruction): IdlInstruction {
-	const name = snakeCase(instruction.name);
+	const name = instruction.name;
 
 	return {
 		accounts: instruction.accounts.map(convertInstructionAccount),
 		args: instruction.args.map(convertField),
-		discriminator: getDisc("global", name),
+		discriminator: getDisc("global", snakeCase(name)),
 		name,
 		returns: instruction.returns ? convertType(instruction.returns) : undefined,
 	};
@@ -196,7 +198,7 @@ function convertInstruction(instruction: LegacyIdlInstruction): IdlInstruction {
 
 function convertAccount(account: LegacyIdlTypeDefinition): IdlAccount {
 	return {
-		discriminator: getDisc("account", account.name),
+		discriminator: getDisc("account", camelcase(account.name, { preserveConsecutiveUppercase: true, pascalCase: true })),
 		name: account.name,
 	};
 }
@@ -230,7 +232,7 @@ function convertTypeDefTy(type: LegacyIdlTypeDefinitionTy): IdlTypeDef["type"] {
 
 function convertField(field: LegacyIdlField): IdlField {
 	return {
-		name: snakeCase(field.name),
+		name: field.name,
 		type: convertType(field.type),
 	};
 }
@@ -279,7 +281,7 @@ function convertInstructionAccount(account: LegacyIdlAccountItem): IdlInstructio
 	} else {
 		return {
 			docs: account.docs || [],
-			name: snakeCase(account.name),
+			name: account.name,
 			optional: account.isOptional || false,
 			pda: account.pda ? convertPda(account.pda) : undefined,
 			relations: account.relations || [],
@@ -292,7 +294,7 @@ function convertInstructionAccount(account: LegacyIdlAccountItem): IdlInstructio
 function convertInstructionAccounts(accounts: LegacyIdlAccounts): IdlInstructionAccounts {
 	return {
 		accounts: accounts.accounts.map(convertInstructionAccount),
-		name: snakeCase(accounts.name),
+		name: accounts.name,
 	};
 }
 
@@ -324,7 +326,7 @@ function convertEventToTypeDef(event: LegacyIdlEvent): IdlTypeDef {
 		name: event.name,
 		type: {
 			fields: event.fields.map((field) => ({
-				name: snakeCase(field.name),
+				name: field.name,
 				type: convertType(field.type),
 			})),
 			kind: "struct",

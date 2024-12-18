@@ -5,7 +5,7 @@
       "module": "commonjs",
       "types": ["mocha", "chai", "node"]
     },
-    "include": ["src", "tests"],
+    "include": ["src", "tests", "cli"],
     "typedocOptions": {
       "entryPoints": ["./src/index.ts"],
       "entryPointStrategy": "expand",
