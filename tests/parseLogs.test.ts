@@ -1,7 +1,7 @@
 import "mocha";
 import assert from "assert";
 
-import { clusterApiUrl, Connection, GetVersionedTransactionConfig, VersionedTransaction } from "@solana/web3.js";
+import { clusterApiUrl, Connection, GetVersionedTransactionConfig } from "@solana/web3.js";
 
 import { parseLogs } from "../src";
 
@@ -14,7 +14,7 @@ const systemProgramId = "11111111111111111111111111111111";
 const srcProgramId = "src5qyZHqTqecJV4aY6Cb6zDZLMDzrDKKezs22MPHr4";
 const execProgramId = "exe59FS5cojZkPJVDFDV8RnXCC7wd6yoBjsUtqH7Zai";
 const dstProgramId = "dst5MGcFPoBeREFAA5E3tU5ij8m5uVYwkzkSAbsLbNo";
-const tokenProgramId = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+// const tokenProgramId = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const debridgeProgramId = "DEbrdGj3HsRsAzx6uH4MKyREKxVAfBydijLUF3ygsFfh";
 
 const config: GetVersionedTransactionConfig = {

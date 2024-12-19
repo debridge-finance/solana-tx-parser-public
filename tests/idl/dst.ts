@@ -754,7 +754,7 @@ export type DlnDst = {
 			name: "close_external_call_storage";
 		},
 	];
-	metadata: { name: "dln_dst"; version: "3.0.0", spec: "" };
+	metadata: { name: "dln_dst"; version: "3.0.0"; spec: "" };
 	types: [
 		{
 			name: "Order";

@@ -21,10 +21,17 @@ describe("Test parse transaction", () => {
 		);
 
 		const fulfillOrder = parsed?.find((pix) => pix.name === "fulfill_order") as ParsedIdlInstruction<DlnDst, "fulfill_order">;
-
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
 		assert.equal(fulfillOrder.args.unvalidated_order.maker_order_nonce.toString(), "1730296839695");
+	});
+
+	it("can parse send_batch_unlock tx", async () => {
+		const parsed = await parser.parseTransactionByHash(
+			rpcConnection,
+			"HLNFpn7Aj9AgL5umSKQyKPHgvnK5YvmLMBfJQnRZTQQ23ZFRh9wi1gxusj7WWGgFG1DFZ5zmsPnZ7N6AtC4Tzaq",
+			false,
+		);
+
+		const unlock = parsed?.find((v) => v.name === "send_batch_unlock") as ParsedIdlInstruction<DlnDst, "send_batch_unlock">;
+		assert.equal(unlock.accounts[10].name, "sending.bridge");
 	});
 });

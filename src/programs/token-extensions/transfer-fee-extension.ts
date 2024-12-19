@@ -25,6 +25,52 @@ export const setTransferFeeInstructionData = struct<SetTransferFeeInstructionDat
 ]);
 
 /** A decoded, valid SetTransferFee instruction */
+export interface DecodedSetTransferFeeInstructionUnchecked {
+	programId: PublicKey;
+	keys: {
+		mint: AccountMeta;
+		authority: AccountMeta;
+		signers: AccountMeta[] | undefined;
+	};
+	data: {
+		instruction: TokenInstruction.TransferFeeExtension;
+		transferFeeInstruction: TransferFeeInstruction.SetTransferFee;
+		transferFeeBasisPoints: number;
+		maximumFee: bigint;
+	};
+}
+
+/**
+ * Decode a SetTransferFee instruction without validating it
+ *
+ * @param instruction Transaction instruction to decode
+ *
+ * @return Decoded, non-validated instruction
+ */
+export function decodeSetTransferFeeInstructionUnchecked({
+	programId,
+	keys: [mint, authority, ...signers],
+	data,
+}: TransactionInstruction): DecodedSetTransferFeeInstructionUnchecked {
+	const { instruction, transferFeeInstruction, transferFeeBasisPoints, maximumFee } = setTransferFeeInstructionData.decode(data);
+
+	return {
+		programId,
+		keys: {
+			mint,
+			authority,
+			signers,
+		},
+		data: {
+			instruction,
+			transferFeeInstruction,
+			transferFeeBasisPoints,
+			maximumFee,
+		},
+	};
+}
+
+/** A decoded, valid SetTransferFee instruction */
 export interface DecodedSetTransferFeeInstruction {
 	programId: PublicKey;
 	keys: {
@@ -68,51 +114,5 @@ export function decodeSetTransferFeeInstruction(instruction: TransactionInstruct
 			signers: signers ? signers : null,
 		},
 		data,
-	};
-}
-
-/** A decoded, valid SetTransferFee instruction */
-export interface DecodedSetTransferFeeInstructionUnchecked {
-	programId: PublicKey;
-	keys: {
-		mint: AccountMeta;
-		authority: AccountMeta;
-		signers: AccountMeta[] | undefined;
-	};
-	data: {
-		instruction: TokenInstruction.TransferFeeExtension;
-		transferFeeInstruction: TransferFeeInstruction.SetTransferFee;
-		transferFeeBasisPoints: number;
-		maximumFee: bigint;
-	};
-}
-
-/**
- * Decode a SetTransferFee instruction without validating it
- *
- * @param instruction Transaction instruction to decode
- *
- * @return Decoded, non-validated instruction
- */
-export function decodeSetTransferFeeInstructionUnchecked({
-	programId,
-	keys: [mint, authority, ...signers],
-	data,
-}: TransactionInstruction): DecodedSetTransferFeeInstructionUnchecked {
-	const { instruction, transferFeeInstruction, transferFeeBasisPoints, maximumFee } = setTransferFeeInstructionData.decode(data);
-
-	return {
-		programId,
-		keys: {
-			mint,
-			authority,
-			signers,
-		},
-		data: {
-			instruction,
-			transferFeeInstruction,
-			transferFeeBasisPoints,
-			maximumFee,
-		},
 	};
 }

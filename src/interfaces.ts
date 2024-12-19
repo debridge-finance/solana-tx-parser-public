@@ -1,5 +1,5 @@
 import { splTokenProgram } from "@coral-xyz/spl-token";
-import { BN, Idl, IdlTypes } from "@coral-xyz/anchor";
+import { BN, Idl, IdlTypes, DecodeType } from "@coral-xyz/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
 export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
@@ -39,7 +39,7 @@ export type ParserFunction<I extends Idl, IxName extends InstructionNames<I>> = 
 export type InstructionParserInfo = [string, ParserFunction<Idl, string>];
 
 export interface ParsedAccount extends AccountMeta {
-	/** Account name, same as in Idl, nested accounts look like `account > nestedAccount` */
+	/** Account name, same as in Idl, nested accounts look like `account.nestedAccount` */
 	name?: string;
 }
 
@@ -87,8 +87,42 @@ export interface ParsedIdlInstruction<I extends Idl, IxName extends InstructionN
 	/** Parsed arguments */
 	args: ParsedIdlArgs<I, IxName>;
 	/** Parsed accounts */
-	accounts: ParsedAccount[];
+	accounts: IdlAccountsToFlatMeta<IxByName<I, IxName>["accounts"]>;
 }
+
+export type IdlInstructionAccountItem2 = IdlInstructionAccount | IdlInstructionAccounts;
+export type IdlInstructionAccount = {
+	name: string;
+	docs?: string[];
+	writable?: boolean;
+	signer?: boolean;
+	optional?: boolean;
+	address?: string;
+	relations?: string[];
+};
+export type IdlInstructionAccounts = {
+	name: string;
+	accounts: IdlInstructionAccountItem2[];
+};
+
+export type IdlAccountsToFlatMeta<T extends IdlInstructionAccountItem2[], Prefix extends string = ""> = T extends [infer First, ...infer Rest]
+	? First extends IdlInstructionAccounts
+		? [
+				...IdlAccountsToFlatMeta<First["accounts"], `${Prefix}${First["name"]}.`>,
+				...IdlAccountsToFlatMeta<Rest extends IdlInstructionAccountItem2[] ? Rest : [], Prefix>,
+			]
+		: First extends IdlInstructionAccount
+			? [
+					{
+						name: `${Prefix}${First["name"]}`;
+						isSigner: First["signer"] extends boolean ? First["signer"] : false;
+						isWritable: First["writable"] extends boolean ? First["writable"] : false;
+						pubkey: PublicKey;
+					},
+					...IdlAccountsToFlatMeta<Rest extends IdlInstructionAccountItem2[] ? Rest : [], Prefix>,
+				]
+			: never
+	: [];
 
 export interface ProgramInfoType {
 	idl: Idl;
@@ -112,9 +146,10 @@ type TypeMap = {
 type IdlType = Idl["instructions"][number]["args"][number]["type"];
 
 /**
+ * @deprecated
  * @private
  */
-export type DecodeType<T extends IdlType, Defined> = T extends keyof TypeMap
+export type LegacyDecodeType<T extends IdlType, Defined> = T extends keyof TypeMap
 	? TypeMap[T]
 	: T extends { defined: keyof Defined }
 		? Defined[T["defined"]]
@@ -137,8 +172,8 @@ export type IxByName<I extends Idl, IxName extends I["instructions"][number]["na
 
 export type IdlAccount = {
 	name: string;
-	isMut: boolean;
-	isSigner: boolean;
+	signer?: boolean;
+	writable?: boolean;
 };
 
 export type IdlAccounts = {
@@ -149,7 +184,7 @@ export type IdlAccounts = {
 /**
  * @private
  */
-export type IdlAccountItem = IdlAccounts | IdlAccount;
+export type IdlInstructionAccountItem = IdlAccounts | IdlAccount;
 
 /**
  * @private
@@ -198,7 +233,7 @@ export interface AssociatedTokenProgramIdlLike extends Idl {
 					isSigner: false;
 				},
 				{
-					name: "rentSysvar";
+					name: "rent";
 					isMut: false;
 					isSigner: false;
 				},
@@ -240,7 +275,7 @@ export interface AssociatedTokenProgramIdlLike extends Idl {
 					isSigner: false;
 				},
 				{
-					name: "rentSysvar";
+					name: "rent";
 					isMut: false;
 					isSigner: false;
 				},

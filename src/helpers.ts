@@ -14,10 +14,6 @@ import {
 
 import { ProgramLogContext } from "./interfaces";
 
-export function uncapitalize<S extends string>(s: S): Uncapitalize<S> {
-	return `${s[0].toLocaleLowerCase()}${s.slice(1)}` as Uncapitalize<S>;
-}
-
 export function hexToBuffer(data: string) {
 	const rawHex = data.startsWith("0x") ? data.slice(2) : data;
 
@@ -336,7 +332,6 @@ function programExit(context: FullLogContext, exitedProgram: string): number {
  * @returns parsed logs with call depth and additional context
  */
 export function parseLogs(logs: string[]): ProgramLogContext[] {
-	const debugLog = (...s: any[]) => console.log(s);
 	const parserRe = generateLogsParsingRegex();
 	const programLogs: ProgramLogContext[] = [];
 

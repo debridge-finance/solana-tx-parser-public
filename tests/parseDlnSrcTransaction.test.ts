@@ -21,10 +21,7 @@ describe("Test parse transaction", () => {
 		);
 
 		const createOrder = parsed?.find((pix) => pix.name === "create_order_with_nonce") as ParsedIdlInstruction<DlnSrc, "create_order_with_nonce">;
-
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
 		assert.equal(createOrder.args.order_args.give_original_amount.toString(), "3011764280");
+		assert.equal(createOrder.accounts[0].name, "maker");
 	});
 });
