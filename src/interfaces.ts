@@ -2,8 +2,6 @@ import { splTokenProgram } from "@coral-xyz/spl-token";
 import { BN, Idl, IdlTypes } from "@coral-xyz/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
-import { ParsedErrors } from "./helpers";
-
 export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
 /**
  * Context of logs for specific instruction
@@ -11,7 +9,6 @@ export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
 export type ProgramLogContext = {
 	rawLogs: string[];
 	errors: string[];
-	parsedError?: ParsedErrors;
 	logMessages: string[];
 	dataLogs: string[];
 	programId: string;

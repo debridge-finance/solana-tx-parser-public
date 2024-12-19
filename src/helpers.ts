@@ -300,18 +300,6 @@ type FullLogContext = {
 	callIds: number[];
 };
 
-export enum ParsedErrors {
-	InsufficientLamports = "InsufficientLamports",
-}
-
-function getParsedError(log: string): ParsedErrors | null {
-	if (/insufficient lamports/.test(log)) {
-		return ParsedErrors.InsufficientLamports;
-	} else {
-		return null;
-	}
-}
-
 function programEnter(context: FullLogContext, invokedProgram: string, invokeLevel: number): ProgramLogContext {
 	if (invokeLevel != context.immediate.currentDepth + 1)
 		throw new Error(`invoke depth mismatch, log: ${invokeLevel}, expected: ${context.immediate.currentDepth}`);
@@ -410,12 +398,6 @@ export function parseLogs(logs: string[]): ProgramLogContext[] {
 				programLogs[currentCall].invokeResult = match.groups.returnMessage;
 			} else if (match.groups.errorMessage) {
 				programLogs[currentCall].errors.push(log);
-
-				const parsedError = getParsedError(log);
-
-				if (parsedError) {
-					programLogs[currentCall].parsedError = parsedError;
-				}
 			}
 		}
 	}
