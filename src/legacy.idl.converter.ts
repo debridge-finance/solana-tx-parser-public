@@ -19,7 +19,7 @@ import {
 	IdlTypeDefined,
 } from "@coral-xyz/anchor/dist/cjs/idl";
 import { sha256 } from "@noble/hashes/sha256";
-import camelcase from "camelcase";
+import { camelCase } from "./camelcase";
 
 function camelToUnderscore(key: string) {
 	const result = key.replace(/([A-Z])/g, " $1");
@@ -198,7 +198,7 @@ function convertInstruction(instruction: LegacyIdlInstruction): IdlInstruction {
 
 function convertAccount(account: LegacyIdlTypeDefinition): IdlAccount {
 	return {
-		discriminator: getDisc("account", camelcase(account.name, { preserveConsecutiveUppercase: true, pascalCase: true })),
+		discriminator: getDisc("account", camelCase(account.name, { preserveConsecutiveUppercase: true, pascalCase: true })),
 		name: account.name,
 	};
 }

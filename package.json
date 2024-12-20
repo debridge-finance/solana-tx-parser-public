@@ -1,7 +1,7 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
-  "version": "3.1.1",
+  "version": "3.1.2",
   "author": "deBridge",
   "license": "LGPL-2.1",
   "homepage": "https://debridge.finance",
@@ -21,15 +21,13 @@
     "LICENSE",
     "README.md"
   ],
-  "browser": "./dist/browser/index.js",
   "module": "./dist/esm/index.js",
   "main": "./dist/cjs/index.js",
   "types": "./dist/cjs/index.d.ts",
   "scripts": {
     "build:esm": "tsc -p tsconfig.esm.json",
     "build:node": "tsc -p tsconfig.cjs.json",
-    "build:browser": "rollup -c",
-    "build": "npm run build:esm && npm run build:node && npm run build:browser",
+    "build": "npm run build:esm && npm run build:node",
     "prepublishOnly": "npm run build",
     "test:ix": "mocha -r ts-node/register -b -t 200000 ./tests/parseIx.test.ts",
     "test:tx": "mocha -r ts-node/register -t 200000 ./tests/parseTransaction.test.ts",
@@ -78,8 +76,7 @@
     "@solana/spl-token": "^0.4.9",
     "@solana/spl-type-length-value": "0.2.0",
     "@solana/web3.js": "^1.95.4",
-    "buffer": "6.0.3",
-    "camelcase": "8.0.0"
+    "buffer": "6.0.3"
   },
   "peerDependencies": {
     "@solana/buffer-layout": "^4.0.0",
