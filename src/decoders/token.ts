@@ -29,10 +29,11 @@ import {
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 
-import { ParsedInstruction, ParsedIdlInstruction, SplToken } from "../interfaces";
+import { ParsedInstruction, ParsedIdlInstruction } from "../interfaces";
+import { SplTokenIdl } from "../programs";
 
-function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<SplToken> {
-	let parsed: ParsedIdlInstruction<SplToken> | null = null;
+function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<SplTokenIdl> {
+	let parsed: ParsedIdlInstruction<SplTokenIdl> | null = null;
 	const decoded = instruction.data[0];
 	switch (decoded) {
 		case TokenInstruction.InitializeMint: {
@@ -44,7 +45,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					{ name: "rent", isSigner: false, isWritable: false, pubkey: instruction.keys[1].pubkey },
 				],
 				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
-			} as ParsedIdlInstruction<SplToken, "initializeMint">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeMint">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount: {
@@ -58,7 +59,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					{ name: "rent", ...decodedIx.keys.rent },
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "initializeAccount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeAccount">;
 			break;
 		}
 		case TokenInstruction.InitializeMultisig: {
@@ -68,7 +69,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "initializeMultisig",
 				accounts: [{ name: "multisig", ...decodedIx.keys.account }, { name: "rent", ...decodedIx.keys.rent }, ...multisig],
 				args: { m: decodedIx.data.m },
-			} as ParsedIdlInstruction<SplToken, "initializeMultisig">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeMultisig">;
 			break;
 		}
 		case TokenInstruction.Transfer: {
@@ -83,7 +84,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken, "transfer">;
+			} as ParsedIdlInstruction<SplTokenIdl, "transfer">;
 			break;
 		}
 		case TokenInstruction.Approve: {
@@ -98,7 +99,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken, "approve">;
+			} as ParsedIdlInstruction<SplTokenIdl, "approve">;
 			break;
 		}
 		case TokenInstruction.Revoke: {
@@ -108,7 +109,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "revoke",
 				accounts: [{ name: "source", ...decodedIx.keys.account }, { name: "owner", ...decodedIx.keys.owner }, ...multisig],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "revoke">;
+			} as ParsedIdlInstruction<SplTokenIdl, "revoke">;
 			break;
 		}
 		case TokenInstruction.SetAuthority: {
@@ -133,7 +134,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore
 				args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
-			} as ParsedIdlInstruction<SplToken, "setAuthority">;
+			} as ParsedIdlInstruction<SplTokenIdl, "setAuthority">;
 			break;
 		}
 		case TokenInstruction.MintTo: {
@@ -148,7 +149,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken, "mintTo">;
+			} as ParsedIdlInstruction<SplTokenIdl, "mintTo">;
 			break;
 		}
 		case TokenInstruction.Burn: {
@@ -163,7 +164,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken, "burn">;
+			} as ParsedIdlInstruction<SplTokenIdl, "burn">;
 			break;
 		}
 		case TokenInstruction.CloseAccount: {
@@ -178,7 +179,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "closeAccount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "closeAccount">;
 			break;
 		}
 		case TokenInstruction.FreezeAccount: {
@@ -193,7 +194,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "freezeAccount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "freezeAccount">;
 			break;
 		}
 		case TokenInstruction.ThawAccount: {
@@ -208,7 +209,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "thawAccount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "thawAccount">;
 			break;
 		}
 		case TokenInstruction.TransferChecked: {
@@ -224,7 +225,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken, "transferChecked">;
+			} as ParsedIdlInstruction<SplTokenIdl, "transferChecked">;
 			break;
 		}
 		case TokenInstruction.ApproveChecked: {
@@ -240,7 +241,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken, "approveChecked">;
+			} as ParsedIdlInstruction<SplTokenIdl, "approveChecked">;
 			break;
 		}
 		case TokenInstruction.MintToChecked: {
@@ -255,7 +256,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken, "mintToChecked">;
+			} as ParsedIdlInstruction<SplTokenIdl, "mintToChecked">;
 			break;
 		}
 		case TokenInstruction.BurnChecked: {
@@ -270,7 +271,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken, "burnChecked">;
+			} as ParsedIdlInstruction<SplTokenIdl, "burnChecked">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount2: {
@@ -283,7 +284,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					{ name: "rent", ...decodedIx.keys.rent },
 				],
 				args: { owner: new PublicKey(decodedIx.data.owner) },
-			} as ParsedIdlInstruction<SplToken, "initializeAccount2">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeAccount2">;
 			break;
 		}
 		case TokenInstruction.SyncNative: {
@@ -292,7 +293,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "syncNative",
 				accounts: [{ name: "account", ...decodedIx.keys.account }],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "syncNative">;
+			} as ParsedIdlInstruction<SplTokenIdl, "syncNative">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount3: {
@@ -304,7 +305,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 					{ name: "mint", ...decodedIx.keys.mint },
 				],
 				args: { owner: new PublicKey(decodedIx.data.owner) },
-			} as ParsedIdlInstruction<SplToken, "initializeAccount3">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeAccount3">;
 			break;
 		}
 		case TokenInstruction.InitializeMultisig2: {
@@ -313,7 +314,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "initializeMultisig2",
 				accounts: [{ name: "multisig", ...instruction.keys[0] }, ...multisig],
 				args: { m: instruction.data[1] },
-			} as ParsedIdlInstruction<SplToken, "initializeMultisig2">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeMultisig2">;
 			break;
 		}
 		case TokenInstruction.InitializeMint2: {
@@ -324,7 +325,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "initializeMint2",
 				accounts: [{ name: "mint", ...tokenMint }],
 				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
-			} as ParsedIdlInstruction<SplToken, "initializeMint2">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeMint2">;
 			break;
 		}
 		case TokenInstruction.InitializeImmutableOwner: {
@@ -333,7 +334,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "initializeImmutableOwner",
 				accounts: [{ name: "account", ...decodedIx.keys.account }],
 				args: {},
-			} as ParsedIdlInstruction<SplToken, "initializeImmutableOwner">;
+			} as ParsedIdlInstruction<SplTokenIdl, "initializeImmutableOwner">;
 			break;
 		}
 		case TokenInstruction.AmountToUiAmount: {
@@ -342,7 +343,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "amountToUiAmount",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken, "amountToUiAmount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "amountToUiAmount">;
 			break;
 		}
 		case TokenInstruction.UiAmountToAmount: {
@@ -351,7 +352,7 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 				name: "uiAmountToAmount",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { uiAmount: new BN(decodedIx.data.amount).toString() },
-			} as ParsedIdlInstruction<SplToken, "uiAmountToAmount">;
+			} as ParsedIdlInstruction<SplTokenIdl, "uiAmountToAmount">;
 			break;
 		}
 		default: {
@@ -361,15 +362,15 @@ function decodeTokenInstruction(instruction: TransactionInstruction): ParsedInst
 
 	return parsed
 		? {
-			...parsed,
-			programId: TOKEN_PROGRAM_ID,
-		}
+				...parsed,
+				programId: TOKEN_PROGRAM_ID,
+			}
 		: {
-			programId: TOKEN_PROGRAM_ID,
-			name: "unknown",
-			accounts: instruction.keys,
-			args: { unknown: instruction.data },
-		};
+				programId: TOKEN_PROGRAM_ID,
+				name: "unknown",
+				accounts: instruction.keys,
+				args: { unknown: instruction.data },
+			};
 }
 
 export { decodeTokenInstruction };

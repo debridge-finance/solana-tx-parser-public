@@ -1,7 +1,8 @@
-import { BN, SystemProgram as SystemProgramIdl } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { TransactionInstruction, SystemInstruction, SystemProgram } from "@solana/web3.js";
 
 import { ParsedIdlInstruction, ParsedInstruction } from "../interfaces";
+import { SystemProgramIdl } from "../programs";
 
 function decodeSystemInstruction(instruction: TransactionInstruction): ParsedInstruction<SystemProgramIdl> {
 	const ixType = SystemInstruction.decodeInstructionType(instruction);

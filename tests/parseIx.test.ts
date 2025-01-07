@@ -5,7 +5,7 @@ import { TransactionInstruction, Keypair } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, TokenInstruction } from "@solana/spl-token";
 
 import { SolanaParser } from "../src/index";
-import { ParsedIdlInstruction, SplToken } from "../src/interfaces";
+import { ParsedIdlInstruction, idl } from "../src";
 
 function parseInstructionTest() {
 	const parser = new SolanaParser([]);
@@ -21,7 +21,7 @@ function parseInstructionTest() {
 			],
 			data: Buffer.concat([Buffer.from([TokenInstruction.InitializeAccount3]), kp3.publicKey.toBuffer()]),
 		});
-		const parsed = parser.parseInstruction(init3Ix) as ParsedIdlInstruction<SplToken, "initializeAccount3">;
+		const parsed = parser.parseInstruction(init3Ix) as ParsedIdlInstruction<idl.SplTokenIdl, "initializeAccount3">;
 		assert.equal(parsed.args.owner.toBase58(), kp3.publicKey.toBase58());
 		assert.equal(parsed.name, "initializeAccount3");
 	});
