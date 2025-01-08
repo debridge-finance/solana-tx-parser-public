@@ -4,7 +4,7 @@ import assert from "assert";
 
 import { Connection, clusterApiUrl } from "@solana/web3.js";
 
-import { ParsedIdlInstruction, SolanaParser, SplToken } from "../src";
+import { ParsedIdlInstruction, SolanaParser, idl } from "../src";
 
 const rpcConnection = new Connection(clusterApiUrl("mainnet-beta"));
 const parser = new SolanaParser([]);
@@ -17,7 +17,7 @@ describe("Test parse transaction", () => {
 			false,
 		);
 
-		const transfer = parsed?.find((pix) => pix.name === "transfer") as ParsedIdlInstruction<SplToken, "transfer">;
+		const transfer = parsed?.find((pix) => pix.name === "transfer") as ParsedIdlInstruction<idl.SplTokenIdl, "transfer">;
 
 		assert.equal(transfer.args.amount.toString(), "10000");
 	});
@@ -40,7 +40,7 @@ describe("Test parse transaction", () => {
 			"Ad/g5OAEaHD3s+moNYVi7UI8R1j0SoFnqOvQv2VhmRT+qvzBcNOOdVKI4j6zAAhblJozVESD4xm/lA2bHDuOiwwBAAEEpWj8ArX39WwJz86zDyZtAlZE9cSVTjPRIN58jtbQPZxhpNDI0S/2ZBfLMb6HeLXgaGGz97EK3dyVlkLYtIg5VPpl7O120Zak9/VrCtDtHyWP+nrMkyrs29yWTK7zUYtQBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKmaseti9QY1Urgrk5uy9MkXzPc5i5Vq+PxmDQT6B2833QIDAwECAAkDECcAAAAAAAADAwEAAAEJ",
 		);
 
-		const transfer = parsed?.find((pix) => pix.name === "transfer") as ParsedIdlInstruction<SplToken, "transfer">;
+		const transfer = parsed?.find((pix) => pix.name === "transfer") as ParsedIdlInstruction<idl.SplTokenIdl, "transfer">;
 
 		assert.equal(transfer.args.amount.toString(), "10000");
 	});

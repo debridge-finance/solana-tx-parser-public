@@ -31,8 +31,16 @@ import {
 	ProgramInfoType,
 	UnknownInstruction,
 } from "./interfaces";
-import { decodeSystemInstruction, decodeTokenInstruction, decodeToken2022Instruction, decodeAssociatedTokenInstruction } from "./decoders";
+import {
+	decodeSystemInstruction,
+	decodeTokenInstruction,
+	decodeToken2022Instruction,
+	decodeAssociatedTokenInstruction,
+	decodeComputeBudgetInstruction,
+} from "./decoders";
 import { compiledInstructionToInstruction, flattenTransactionResponse, parsedInstructionToInstruction, parseTransactionAccounts } from "./helpers";
+
+const COMPUTE_BUDGET_PROGRAM_ID = new PublicKey("ComputeBudget111111111111111111111111111111");
 
 function flattenIdlAccounts(accounts: IdlInstructionAccountItem2[], prefix?: string): IdlAccount[] {
 	return accounts
@@ -76,6 +84,7 @@ export class SolanaParser {
 			[TOKEN_PROGRAM_ID.toBase58(), decodeTokenInstruction],
 			[TOKEN_2022_PROGRAM_ID.toBase58(), decodeToken2022Instruction],
 			[ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), decodeAssociatedTokenInstruction],
+			[COMPUTE_BUDGET_PROGRAM_ID.toBase58(), decodeComputeBudgetInstruction],
 		];
 		let result: InstructionParsers;
 		parsers = parsers || [];

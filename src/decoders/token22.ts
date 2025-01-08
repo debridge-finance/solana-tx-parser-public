@@ -66,11 +66,11 @@ import {
 	updateAuthorityLayout,
 	updateMetadataLayout,
 } from "../programs/token-extensions";
-import { SplToken22 } from "../programs/spl-token-22.program";
+import { SplToken22Idl } from "../programs";
 import { ParsedIdlInstruction, ParsedInstruction } from "../interfaces";
 
-function decodeToken2022Instruction(instruction: TransactionInstruction): ParsedInstruction<SplToken22> {
-	let parsed: ParsedIdlInstruction<SplToken22> | null;
+function decodeToken2022Instruction(instruction: TransactionInstruction): ParsedInstruction<SplToken22Idl> {
+	let parsed: ParsedIdlInstruction<SplToken22Idl> | null;
 	const decoded = instruction.data[0];
 	switch (decoded) {
 		case TokenInstruction.InitializeMint: {
@@ -82,7 +82,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					{ name: "rent", ...decodedIx.keys.rent },
 				],
 				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
-			} as ParsedIdlInstruction<SplToken22, "initializeMint">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeMint">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount: {
@@ -96,7 +96,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					{ name: "rent", ...decodedIx.keys.rent },
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "initializeAccount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeAccount">;
 			break;
 		}
 		case TokenInstruction.InitializeMultisig: {
@@ -106,7 +106,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "initializeMultisig",
 				accounts: [{ name: "multisig", ...decodedIx.keys.account }, { name: "rent", ...decodedIx.keys.rent }, ...multisig],
 				args: { m: decodedIx.data.m },
-			} as ParsedIdlInstruction<SplToken22, "initializeMultisig">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeMultisig">;
 			break;
 		}
 		case TokenInstruction.Transfer: {
@@ -121,7 +121,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken22, "transfer">;
+			} as ParsedIdlInstruction<SplToken22Idl, "transfer">;
 			break;
 		}
 		case TokenInstruction.Approve: {
@@ -136,7 +136,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken22, "approve">;
+			} as ParsedIdlInstruction<SplToken22Idl, "approve">;
 			break;
 		}
 		case TokenInstruction.Revoke: {
@@ -146,7 +146,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "revoke",
 				accounts: [{ name: "source", ...decodedIx.keys.account }, { name: "owner", ...decodedIx.keys.owner }, ...multisig],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "revoke">;
+			} as ParsedIdlInstruction<SplToken22Idl, "revoke">;
 			break;
 		}
 		case TokenInstruction.SetAuthority: {
@@ -174,7 +174,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				accounts: [{ name: "owned", ...decodedIx.keys.account }, { name: "owner", ...decodedIx.keys.currentAuthority }, ...multisig],
 				args: { authorityType: authrorityTypeMap[decodedIx.data.authorityType], newAuthority: decodedIx.data.newAuthority },
 				programId: TOKEN_2022_PROGRAM_ID,
-			} as ParsedIdlInstruction<SplToken22, "setAuthority">;
+			} as ParsedIdlInstruction<SplToken22Idl, "setAuthority">;
 			break;
 		}
 		case TokenInstruction.MintTo: {
@@ -189,7 +189,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken22, "mintTo">;
+			} as ParsedIdlInstruction<SplToken22Idl, "mintTo">;
 			break;
 		}
 		case TokenInstruction.Burn: {
@@ -204,7 +204,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken22, "burn">;
+			} as ParsedIdlInstruction<SplToken22Idl, "burn">;
 			break;
 		}
 		case TokenInstruction.CloseAccount: {
@@ -219,7 +219,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "closeAccount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "closeAccount">;
 			break;
 		}
 		case TokenInstruction.FreezeAccount: {
@@ -234,7 +234,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "freezeAccount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "freezeAccount">;
 			break;
 		}
 		case TokenInstruction.ThawAccount: {
@@ -249,7 +249,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "thawAccount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "thawAccount">;
 			break;
 		}
 		case TokenInstruction.TransferChecked: {
@@ -265,7 +265,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken22, "transferChecked">;
+			} as ParsedIdlInstruction<SplToken22Idl, "transferChecked">;
 			break;
 		}
 		case TokenInstruction.ApproveChecked: {
@@ -281,7 +281,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken22, "approveChecked">;
+			} as ParsedIdlInstruction<SplToken22Idl, "approveChecked">;
 			break;
 		}
 		case TokenInstruction.MintToChecked: {
@@ -296,7 +296,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken22, "mintToChecked">;
+			} as ParsedIdlInstruction<SplToken22Idl, "mintToChecked">;
 			break;
 		}
 		case TokenInstruction.BurnChecked: {
@@ -311,7 +311,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					...multisig,
 				],
 				args: { amount: new BN(decodedIx.data.amount.toString()), decimals: decodedIx.data.decimals },
-			} as ParsedIdlInstruction<SplToken22, "burnChecked">;
+			} as ParsedIdlInstruction<SplToken22Idl, "burnChecked">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount2: {
@@ -324,7 +324,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					{ name: "rent", ...instruction.keys[2] },
 				],
 				args: { owner: new PublicKey(decodedIx.data.owner) },
-			} as ParsedIdlInstruction<SplToken22, "initializeAccount2">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeAccount2">;
 			break;
 		}
 		case TokenInstruction.SyncNative: {
@@ -332,7 +332,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "syncNative",
 				accounts: [{ name: "account", ...instruction.keys[0] }],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "syncNative">;
+			} as ParsedIdlInstruction<SplToken22Idl, "syncNative">;
 			break;
 		}
 		case TokenInstruction.InitializeAccount3: {
@@ -344,7 +344,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					{ name: "mint", ...instruction.keys[1] },
 				],
 				args: { owner: new PublicKey(decodedIx.data.owner) },
-			} as ParsedIdlInstruction<SplToken22, "initializeAccount3">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeAccount3">;
 			break;
 		}
 		case TokenInstruction.InitializeMultisig2: {
@@ -353,7 +353,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "initializeMultisig2",
 				accounts: [{ name: "multisig", ...instruction.keys[0] }, ...multisig],
 				args: { m: instruction.data[1] },
-			} as ParsedIdlInstruction<SplToken22, "initializeMultisig2">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeMultisig2">;
 			break;
 		}
 		case TokenInstruction.InitializeMint2: {
@@ -364,7 +364,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "initializeMint2",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { decimals: decodedIx.data.decimals, mintAuthority: decodedIx.data.mintAuthority, freezeAuthority: decodedIx.data.freezeAuthority },
-			} as ParsedIdlInstruction<SplToken22, "initializeMint2">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeMint2">;
 			break;
 		}
 		case TokenInstruction.GetAccountDataSize: {
@@ -382,7 +382,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				args: {
 					extensionTypes: types,
 				},
-			} as ParsedIdlInstruction<SplToken22, "getAccountDataSize">;
+			} as ParsedIdlInstruction<SplToken22Idl, "getAccountDataSize">;
 			break;
 		}
 		case TokenInstruction.InitializeImmutableOwner: {
@@ -393,7 +393,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "initializeImmutableOwner",
 				accounts: [{ name: "tokenAccount", ...decodedIx.keys.account }],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "initializeImmutableOwner">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeImmutableOwner">;
 			break;
 		}
 		case TokenInstruction.AmountToUiAmount: {
@@ -404,7 +404,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "amountToUiAmount",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { amount: new BN(decodedIx.data.amount.toString()) },
-			} as ParsedIdlInstruction<SplToken22, "amountToUiAmount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "amountToUiAmount">;
 			break;
 		}
 		case TokenInstruction.UiAmountToAmount: {
@@ -415,7 +415,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "uiAmountToAmount",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { uiAmount: decodedIx.data.amount },
-			} as ParsedIdlInstruction<SplToken22, "uiAmountToAmount">;
+			} as ParsedIdlInstruction<SplToken22Idl, "uiAmountToAmount">;
 			break;
 		}
 		case TokenInstruction.InitializeMintCloseAuthority: {
@@ -426,7 +426,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 				name: "initializeMintCloseAuthority",
 				accounts: [{ name: "mint", ...decodedIx.keys.mint }],
 				args: { closeAuthority: decodedIx.data.closeAuthority },
-			} as ParsedIdlInstruction<SplToken22, "initializeMintCloseAuthority">;
+			} as ParsedIdlInstruction<SplToken22Idl, "initializeMintCloseAuthority">;
 			break;
 		}
 		case TokenInstruction.CreateNativeMint: {
@@ -440,7 +440,7 @@ function decodeToken2022Instruction(instruction: TransactionInstruction): Parsed
 					{ name: "systemProgram", isSigner: false, isWritable: false, pubkey: instruction.keys[2].pubkey },
 				],
 				args: {},
-			} as ParsedIdlInstruction<SplToken22, "createNativeMint">;
+			} as ParsedIdlInstruction<SplToken22Idl, "createNativeMint">;
 			break;
 		}
 		case TokenInstruction.TransferFeeExtension: {

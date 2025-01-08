@@ -1,9 +1,10 @@
 import { TransactionInstruction } from "@solana/web3.js";
 import { ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
-import { AssociatedTokenProgramIdlLike, ParsedInstruction } from "../interfaces";
+import { ParsedInstruction } from "../interfaces";
+import { AssociatedTokenProgramIdl } from "../programs";
 
-function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<AssociatedTokenProgramIdlLike> {
+function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): ParsedInstruction<AssociatedTokenProgramIdl> {
 	return {
 		name: instruction.data[0] == 0 ? "createAssociatedTokenAccountIdempotent" : "createAssociatedTokenAccount",
 		accounts: [
@@ -17,7 +18,7 @@ function decodeAssociatedTokenInstruction(instruction: TransactionInstruction): 
 		],
 		args: {},
 		programId: ASSOCIATED_TOKEN_PROGRAM_ID,
-	} as ParsedInstruction<AssociatedTokenProgramIdlLike, "createAssociatedTokenAccount" | "createAssociatedTokenAccountIdempotent">;
+	} as ParsedInstruction<AssociatedTokenProgramIdl, "createAssociatedTokenAccount" | "createAssociatedTokenAccountIdempotent">;
 }
 
 export { decodeAssociatedTokenInstruction };

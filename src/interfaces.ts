@@ -1,8 +1,6 @@
-import { splTokenProgram } from "@coral-xyz/spl-token";
 import { BN, Idl, IdlTypes, DecodeType } from "@coral-xyz/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
-export type SplToken = ReturnType<typeof splTokenProgram>["idl"];
 /**
  * Context of logs for specific instruction
  */
@@ -54,10 +52,6 @@ export type InstructionNames<I extends Idl> = I["instructions"][number]["name"];
 
 export type ParsedIdlArgs<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = ParsedIdlArgsByInstructionName<I, IxByName<I, IxName>>;
 
-export type ParsedArgs = {
-	[key: string]: unknown;
-};
-
 export type UnknownInstruction = {
 	name: "unknown" | string;
 	args: { unknown: unknown };
@@ -91,7 +85,8 @@ export interface ParsedIdlInstruction<I extends Idl, IxName extends InstructionN
 }
 
 export type IdlInstructionAccountItem2 = IdlInstructionAccount | IdlInstructionAccounts;
-export type IdlInstructionAccount = {
+
+type IdlInstructionAccount = {
 	name: string;
 	docs?: string[];
 	writable?: boolean;
@@ -100,7 +95,8 @@ export type IdlInstructionAccount = {
 	address?: string;
 	relations?: string[];
 };
-export type IdlInstructionAccounts = {
+
+type IdlInstructionAccounts = {
 	name: string;
 	accounts: IdlInstructionAccountItem2[];
 };
@@ -175,112 +171,3 @@ export type IdlAccount = {
 	signer?: boolean;
 	writable?: boolean;
 };
-
-export type IdlAccounts = {
-	name: string;
-	accounts: IdlAccount[];
-};
-
-/**
- * @private
- */
-export type IdlInstructionAccountItem = IdlAccounts | IdlAccount;
-
-/**
- * @private
- */
-export interface AssociatedTokenProgramIdlLike extends Idl {
-	name: "associated_token_program";
-	address: "";
-	metadata: {
-		name: "associated_token_program";
-		version: "1.0.3";
-		spec: "";
-	};
-	instructions: [
-		{
-			discriminator: [0];
-			name: "createAssociatedTokenAccountIdempotent";
-			accounts: [
-				{
-					name: "fundingAccount";
-					isMut: true;
-					isSigner: true;
-				},
-				{
-					name: "newAccount";
-					isMut: true;
-					isSigner: false;
-				},
-				{
-					name: "wallet";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "tokenMint";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "systemProgram";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "tokenProgram";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "rent";
-					isMut: false;
-					isSigner: false;
-				},
-			];
-			args: [];
-		},
-		{
-			discriminator: [];
-			name: "createAssociatedTokenAccount";
-			accounts: [
-				{
-					name: "fundingAccount";
-					isMut: true;
-					isSigner: true;
-				},
-				{
-					name: "newAccount";
-					isMut: true;
-					isSigner: false;
-				},
-				{
-					name: "wallet";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "tokenMint";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "systemProgram";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "tokenProgram";
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: "rent";
-					isMut: false;
-					isSigner: false;
-				},
-			];
-			args: [];
-		},
-	];
-}

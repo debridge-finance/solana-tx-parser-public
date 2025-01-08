@@ -1,3 +1,8 @@
+## v3.2.0
+- Export synthetic idls from idl namespace (e.g. `idl.idl.SplTokenIdl`, ixs can be decoded as `ParsedIdlInstruction<idl.SplTokenIdl>`)
+- Split decoders into separate files
+- Add computeBudget parser
+
 ## v3.0.0
 - Add support of token22 out of the box
 - Rework logs parsing, parse known error types for token & system programs
