@@ -16,6 +16,7 @@ export function decodeComputeBudgetInstruction(instruction: TransactionInstructi
 				args: {
 					bytes: decoded.bytes,
 				},
+				programId: instruction.programId,
 			} as ParsedIdlInstruction<ComputeBudget, "requestHeapFrame">;
 			break;
 		}
