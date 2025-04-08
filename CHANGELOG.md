@@ -1,3 +1,6 @@
+## v3.2.3
+- Fix token22 authority type map
+
 ## v3.2.2
 - Fix ComputeBudget.setLoadedAccountsDataSizeLimit parsing
 
