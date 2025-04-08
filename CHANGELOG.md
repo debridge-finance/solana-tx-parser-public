@@ -1,3 +1,6 @@
+## v3.2.2
+- Fix ComputeBudget.setLoadedAccountsDataSizeLimit parsing
+
 ## v3.2.0
 - Export synthetic idls from idl namespace (e.g. `idl.idl.SplTokenIdl`, ixs can be decoded as `ParsedIdlInstruction<idl.SplTokenIdl>`)
 - Split decoders into separate files

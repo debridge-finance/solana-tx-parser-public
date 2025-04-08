@@ -5,22 +5,10 @@ import { ParsedIdlInstruction, ParsedInstruction } from "../interfaces";
 import { ComputeBudget } from "../programs/compute.budget";
 
 export function decodeComputeBudgetInstruction(instruction: TransactionInstruction): ParsedInstruction<ComputeBudget> {
-	const type = ComputeBudgetInstruction.decodeInstructionType(instruction);
+	const type = instruction.data[0]; // ComputeBudgetInstruction.decodeInstructionType(instruction);
 	let parsed: ParsedIdlInstruction<ComputeBudget> | null;
 	switch (type) {
-		case "RequestHeapFrame": {
-			const decoded = ComputeBudgetInstruction.decodeRequestHeapFrame(instruction);
-			parsed = {
-				name: "requestHeapFrame",
-				accounts: [],
-				args: {
-					bytes: decoded.bytes,
-				},
-				programId: instruction.programId,
-			} as ParsedIdlInstruction<ComputeBudget, "requestHeapFrame">;
-			break;
-		}
-		case "RequestUnits": {
+		case 0: {
 			const decoded = ComputeBudgetInstruction.decodeRequestUnits(instruction);
 			parsed = {
 				name: "requestUnits",
@@ -33,7 +21,19 @@ export function decodeComputeBudgetInstruction(instruction: TransactionInstructi
 			} as ParsedIdlInstruction<ComputeBudget, "requestUnits">;
 			break;
 		}
-		case "SetComputeUnitLimit": {
+		case 1: {
+			const decoded = ComputeBudgetInstruction.decodeRequestHeapFrame(instruction);
+			parsed = {
+				name: "requestHeapFrame",
+				accounts: [],
+				args: {
+					bytes: decoded.bytes,
+				},
+				programId: instruction.programId,
+			} as ParsedIdlInstruction<ComputeBudget, "requestHeapFrame">;
+			break;
+		}
+		case 2: {
 			const decoded = ComputeBudgetInstruction.decodeSetComputeUnitLimit(instruction);
 			parsed = {
 				name: "setComputeUnitLimit",
@@ -45,7 +45,7 @@ export function decodeComputeBudgetInstruction(instruction: TransactionInstructi
 			} as ParsedIdlInstruction<ComputeBudget, "setComputeUnitLimit">;
 			break;
 		}
-		case "SetComputeUnitPrice": {
+		case 3: {
 			const decoded = ComputeBudgetInstruction.decodeSetComputeUnitPrice(instruction);
 			parsed = {
 				name: "setComputeUnitPrice",
@@ -55,6 +55,17 @@ export function decodeComputeBudgetInstruction(instruction: TransactionInstructi
 				},
 				programId: instruction.programId,
 			} as ParsedIdlInstruction<ComputeBudget, "setComputeUnitPrice">;
+			break;
+		}
+		case 4: {
+			parsed = {
+				name: "setLoadedAccountsDataSizeLimit",
+				accounts: [],
+				args: {
+					bytes: instruction.data.readUInt32LE(1),
+				},
+				programId: instruction.programId,
+			} as ParsedIdlInstruction<ComputeBudget, "setLoadedAccountsDataSizeLimit">;
 			break;
 		}
 		default: {
