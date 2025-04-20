@@ -245,6 +245,7 @@ export class SolanaParser {
 	): Promise<ParsedInstruction<Idl, string>[] | null> {
 		const transaction = await connection.getTransaction(txId, { commitment: commitment, maxSupportedTransactionVersion: 0 });
 		if (!transaction) return null;
+		if (transaction.meta?.err) return null;
 		if (flatten) {
 			const flattened = flattenTransactionResponse(transaction);
 
