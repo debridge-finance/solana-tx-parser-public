@@ -17,7 +17,7 @@ import {
 	AccountInfo,
 } from "@solana/web3.js";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
-import { BorshInstructionCoder, Idl } from "@coral-xyz/anchor";
+import { BorshInstructionCoder, Idl, BorshEventCoder, utils } from "@coral-xyz/anchor";
 
 import {
 	IdlAccount,
@@ -29,7 +29,9 @@ import {
 	ParsedInstruction,
 	ParserFunction,
 	ProgramInfoType,
+	ProgramParsers,
 	UnknownInstruction,
+	EventNames,
 } from "./interfaces";
 import {
 	decodeSystemInstruction,
@@ -70,6 +72,8 @@ function flattenIdlAccounts(accounts: IdlInstructionAccountItem2[], prefix?: str
  */
 export class SolanaParser {
 	private instructionParsers: InstructionParsers;
+
+	private programParsers: ProgramParsers = new Map();
 
 	/**
 	 * Initializes parser object
@@ -115,6 +119,8 @@ export class SolanaParser {
 	 */
 	addParser(programId: PublicKey, parser: ParserFunction<Idl, string>) {
 		this.instructionParsers.set(programId.toBase58(), parser);
+		// Remove coder cache if present (custom parser overrides IDL-based one)
+		this.programParsers.delete(programId.toBase58());
 	}
 
 	/**
@@ -123,47 +129,84 @@ export class SolanaParser {
 	 * @param idl IDL that describes anchor program
 	 */
 	addParserFromIdl(programId: PublicKey | string, idl: Idl) {
+		const pubkey = new PublicKey(programId).toBase58();
+		if (!this.programParsers.has(pubkey)) {
+			this.programParsers.set(pubkey, {
+				instructionCoder: new BorshInstructionCoder(idl),
+				eventCoder: new BorshEventCoder(idl),
+			});
+		}
 		this.instructionParsers.set(...this.buildIdlParser(new PublicKey(programId), idl));
 	}
 
 	private buildIdlParser(programId: PublicKey, idl: Idl): InstructionParserInfo {
-		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl>> = (instruction: TransactionInstruction) => {
-			const coder = new BorshInstructionCoder(idl);
-			const parsedIx = coder.decode(instruction.data);
-			if (!parsedIx) {
-				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
-			} else {
-				const ix = idl.instructions.find((instr) => instr.name === parsedIx.name);
-				if (!ix) {
-					return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data, parsedIx.name);
-				}
-				const flatIdlAccounts = flattenIdlAccounts(ix.accounts);
-				const accounts = instruction.keys.map((meta, idx) => {
-					if (idx < flatIdlAccounts.length) {
-						return {
-							name: flatIdlAccounts[idx].name,
-							...meta,
-						};
-					}
-					// "Remaining accounts" are unnamed in Anchor.
-					else {
-						return {
-							name: `Remaining ${idx - flatIdlAccounts.length}`,
-							...meta,
-						};
-					}
-				});
+		const pubkey = programId.toBase58();
+		if (!this.programParsers.has(pubkey)) {
+			this.programParsers.set(pubkey, {
+				instructionCoder: new BorshInstructionCoder(idl),
+				eventCoder: new BorshEventCoder(idl),
+			});
+		}
 
-				return {
-					name: parsedIx.name,
-					accounts: accounts,
-					programId: instruction.programId,
-					args: parsedIx.data as ParsedIdlArgs<typeof idl, (typeof idl)["instructions"][number]["name"]>, // as IxArgsMap<typeof idl, typeof idl["instructions"][number]["name"]>,
-				};
+		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl> | EventNames<typeof idl>> = (instruction: TransactionInstruction) => {
+			const programParser = this.programParsers.get(pubkey);
+			if (!programParser) {
+				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
 			}
+			const { instructionCoder, eventCoder } = programParser;
+			const parsedIx = instructionCoder.decode(instruction.data);
+
+			if (!parsedIx) {
+				if (instruction.data && instruction.data.length > 8) {
+					const eventData = utils.bytes.base64.encode(instruction.data.subarray(8));
+					const parsedEvent = eventCoder.decode(eventData);
+
+					if (parsedEvent) {
+						return {
+							name: parsedEvent.name,
+							programId: instruction.programId,
+							args: parsedEvent.data,
+							accounts: instruction.keys.map((meta, idx) => ({
+								name: `Account ${idx}`,
+								...meta,
+							})),
+						};
+					}
+				}
+
+				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
+			}
+
+			const ix = idl.instructions.find((instr) => instr.name === parsedIx.name);
+			if (!ix) {
+				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data, parsedIx.name);
+			}
+			const flatIdlAccounts = flattenIdlAccounts(ix.accounts);
+			const accounts = instruction.keys.map((meta, idx) => {
+				if (idx < flatIdlAccounts.length) {
+					return {
+						name: flatIdlAccounts[idx].name,
+						...meta,
+					};
+				}
+				// "Remaining accounts" are unnamed in Anchor.
+				else {
+					return {
+						name: `Remaining ${idx - flatIdlAccounts.length}`,
+						...meta,
+					};
+				}
+			});
+
+			return {
+				name: parsedIx.name,
+				accounts: accounts,
+				programId: instruction.programId,
+				args: parsedIx.data as ParsedIdlArgs<typeof idl, (typeof idl)["instructions"][number]["name"]>,
+			};
 		};
 
-		return [programId.toBase58(), idlParser.bind(this)];
+		return [pubkey, idlParser.bind(this)];
 	}
 
 	/**
@@ -172,6 +215,7 @@ export class SolanaParser {
 	 */
 	removeParser(programId: PublicKey) {
 		this.instructionParsers.delete(programId.toBase58());
+		this.programParsers.delete(programId.toBase58());
 	}
 
 	private buildUnknownParsedInstruction(programId: PublicKey, accounts: AccountMeta[], argData: unknown, name?: string): UnknownInstruction {
