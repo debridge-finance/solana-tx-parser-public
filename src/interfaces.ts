@@ -1,4 +1,4 @@
-import { BN, Idl, IdlTypes, DecodeType } from "@coral-xyz/anchor";
+import { BN, Idl, IdlTypes, DecodeType, BorshInstructionCoder, BorshEventCoder } from "@coral-xyz/anchor";
 import { AccountMeta, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
 /**
@@ -26,6 +26,12 @@ export type TransactionWithLogs = {
  * Map which keys are programIds (base58-encoded) and values are ix parsers
  */
 export type InstructionParsers = Map<string, ParserFunction<Idl, string>>;
+
+/**
+ * Map which keys are programIds (base58-encoded) and values are ix parsers
+ */
+export type ProgramParsers = Map<string, { instructionCoder: BorshInstructionCoder; eventCoder: BorshEventCoder }>;
+
 /**
  * Function that takes transaction ix and returns parsed variant
  */
@@ -49,8 +55,10 @@ export type ParsedIdlArgsByInstructionName<I extends Idl, Ix extends I["instruct
 };
 
 export type InstructionNames<I extends Idl> = I["instructions"][number]["name"];
+export type EventNames<I extends Idl> = I extends { events: Array<{ name: infer N }> } ? (N extends string ? N : never) : never;
 
 export type ParsedIdlArgs<I extends Idl, IxName extends InstructionNames<I> = InstructionNames<I>> = ParsedIdlArgsByInstructionName<I, IxByName<I, IxName>>;
+export type ParsedIdlType<I extends Idl, EventName extends keyof IdlTypes<I>> = IdlTypes<I>[EventName];
 
 export type UnknownInstruction = {
 	name: "unknown" | string;
@@ -82,6 +90,16 @@ export interface ParsedIdlInstruction<I extends Idl, IxName extends InstructionN
 	args: ParsedIdlArgs<I, IxName>;
 	/** Parsed accounts */
 	accounts: IdlAccountsToFlatMeta<IxByName<I, IxName>["accounts"]>;
+}
+
+export interface ParsedIdlEvent<I extends Idl, EventName extends EventNames<I> = EventNames<I>> {
+	/** Instruction name */
+	name: EventName;
+	programId: PublicKey;
+	/** Parsed arguments */
+	args: ParsedIdlType<I, EventName>;
+	/** Parsed accounts */
+	accounts: Array<{ name: string; [key: string]: any }>;
 }
 
 export type IdlInstructionAccountItem2 = IdlInstructionAccount | IdlInstructionAccounts;

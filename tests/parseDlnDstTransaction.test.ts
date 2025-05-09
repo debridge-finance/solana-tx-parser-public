@@ -5,23 +5,30 @@ import assert from "assert";
 import { Connection, clusterApiUrl } from "@solana/web3.js";
 
 import { SolanaParser } from "../src";
-import { ParsedIdlInstruction } from "../src/interfaces";
+import { ParsedIdlEvent, ParsedIdlInstruction } from "../src/interfaces";
 
 import { IDL as DlnDstIdl, DlnDst } from "./idl/dst";
+import { IDL as JupIdl, Jupiter } from "./idl/jupiter_v6";
 
 const rpcConnection = new Connection(clusterApiUrl("mainnet-beta"));
-const parser = new SolanaParser([{ idl: DlnDstIdl, programId: "dst5MGcFPoBeREFAA5E3tU5ij8m5uVYwkzkSAbsLbNo" }]);
+const parser = new SolanaParser([
+	{ idl: DlnDstIdl, programId: "dst5MGcFPoBeREFAA5E3tU5ij8m5uVYwkzkSAbsLbNo" },
+	{ idl: JupIdl, programId: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4" },
+]);
 
 describe("Test parse transaction", () => {
 	it("can parse fulfill tx", async () => {
 		const parsed = await parser.parseTransactionByHash(
 			rpcConnection,
-			"2H1jBCXaqoy8XZFvdsbZzC9bKU3V2C43YoDEJZVBMUg5wKf12LMt4fqT8j65D7SZY1PNfgMFiTRFXqpcAt5Wdc4z",
-			false,
+			"4V5XFQ8ViuWi4VxHWb7bCZtWGzyPgZnKTf6ABnC1VUXd2y5wgfrn8EGmzwst1iP19ySPA7jwx87KWX3S2GYUh8Lr",
+			true,
 		);
 
 		const fulfillOrder = parsed?.find((pix) => pix.name === "fulfill_order") as ParsedIdlInstruction<DlnDst, "fulfill_order">;
-		assert.equal(fulfillOrder.args.unvalidated_order.maker_order_nonce.toString(), "1730296839695");
+		assert.equal(fulfillOrder.args.unvalidated_order.maker_order_nonce.toString(), "1737321940254");
+
+		const swapEvent = parsed?.find((pix) => pix.name === "SwapEvent") as ParsedIdlEvent<Jupiter, "SwapEvent">;
+		assert.equal(swapEvent.args.output_amount.toString(), "1798522248");
 	});
 
 	it("can parse send_batch_unlock tx", async () => {

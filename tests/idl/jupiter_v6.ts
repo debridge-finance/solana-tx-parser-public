@@ -1,6 +1,6 @@
 export declare type Jupiter = {
 	accounts: [{ discriminator: [156, 247, 9, 188, 54, 108, 85, 77]; name: "TokenLedger" }];
-	address: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo";
+	address: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 	constants: [];
 	errors: [
 		{ code: 6000; msg: "Empty route"; name: "EmptyRoute" },
@@ -410,7 +410,7 @@ export declare type Jupiter = {
 };
 export const IDL: Jupiter = {
 	accounts: [{ discriminator: [156, 247, 9, 188, 54, 108, 85, 77], name: "TokenLedger" }],
-	address: "JUP2jxvXaqu7NQY1GmNF4m1vodw12LVXYxbFL2uJvfo",
+	address: "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",
 	constants: [],
 	errors: [
 		{ code: 6000, msg: "Empty route", name: "EmptyRoute" },
