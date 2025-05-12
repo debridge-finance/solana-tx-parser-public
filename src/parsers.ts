@@ -123,6 +123,15 @@ export class SolanaParser {
 		this.idlParsers.delete(programId.toBase58());
 	}
 
+	/**
+	 * Adds (or updates) parser for provided programId
+	 * @param programId program id to add parser for
+	 * @param idl IDL that describes anchor program
+	 */
+	addParserFromIdl(programId: PublicKey | string, idl: Idl) {
+		this.instructionParsers.set(...this.buildIdlParser(new PublicKey(programId), idl));
+	}
+
 	private buildIdlParser(programId: PublicKey, idl: Idl): InstructionParserInfo {
 		const pubkey = programId.toBase58();
 		if (!this.idlParsers.has(pubkey)) {
