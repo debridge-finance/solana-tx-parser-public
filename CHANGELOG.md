@@ -1,3 +1,7 @@
+## v3.3.0
+- Add idl parsers cache
+- Add anchor event ixs parsing
+
 ## v3.2.3
 - Fix token22 authority type map
 
