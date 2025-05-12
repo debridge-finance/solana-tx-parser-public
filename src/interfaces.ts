@@ -30,7 +30,7 @@ export type InstructionParsers = Map<string, ParserFunction<Idl, string>>;
 /**
  * Map which keys are programIds (base58-encoded) and values are ix parsers
  */
-export type ProgramParsers = Map<string, { instructionCoder: BorshInstructionCoder; eventCoder: BorshEventCoder }>;
+export type IdlParser = Map<string, { instructionCoder: BorshInstructionCoder; eventCoder: BorshEventCoder }>;
 
 /**
  * Function that takes transaction ix and returns parsed variant

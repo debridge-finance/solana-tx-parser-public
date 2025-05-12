@@ -29,7 +29,7 @@ import {
 	ParsedInstruction,
 	ParserFunction,
 	ProgramInfoType,
-	ProgramParsers,
+	IdlParser,
 	UnknownInstruction,
 	EventNames,
 } from "./interfaces";
@@ -73,7 +73,7 @@ function flattenIdlAccounts(accounts: IdlInstructionAccountItem2[], prefix?: str
 export class SolanaParser {
 	private instructionParsers: InstructionParsers;
 
-	private programParsers: ProgramParsers = new Map();
+	private idlParsers: IdlParser = new Map();
 
 	/**
 	 * Initializes parser object
@@ -119,37 +119,21 @@ export class SolanaParser {
 	 */
 	addParser(programId: PublicKey, parser: ParserFunction<Idl, string>) {
 		this.instructionParsers.set(programId.toBase58(), parser);
-		// Remove coder cache if present (custom parser overrides IDL-based one)
-		this.programParsers.delete(programId.toBase58());
-	}
-
-	/**
-	 * Adds (or updates) parser for provided programId
-	 * @param programId program id to add parser for
-	 * @param idl IDL that describes anchor program
-	 */
-	addParserFromIdl(programId: PublicKey | string, idl: Idl) {
-		const pubkey = new PublicKey(programId).toBase58();
-		if (!this.programParsers.has(pubkey)) {
-			this.programParsers.set(pubkey, {
-				instructionCoder: new BorshInstructionCoder(idl),
-				eventCoder: new BorshEventCoder(idl),
-			});
-		}
-		this.instructionParsers.set(...this.buildIdlParser(new PublicKey(programId), idl));
+		// Remove idlParser cache if present (custom parser overrides IDL-based one)
+		this.idlParsers.delete(programId.toBase58());
 	}
 
 	private buildIdlParser(programId: PublicKey, idl: Idl): InstructionParserInfo {
 		const pubkey = programId.toBase58();
-		if (!this.programParsers.has(pubkey)) {
-			this.programParsers.set(pubkey, {
+		if (!this.idlParsers.has(pubkey)) {
+			this.idlParsers.set(pubkey, {
 				instructionCoder: new BorshInstructionCoder(idl),
 				eventCoder: new BorshEventCoder(idl),
 			});
 		}
 
 		const idlParser: ParserFunction<typeof idl, InstructionNames<typeof idl> | EventNames<typeof idl>> = (instruction: TransactionInstruction) => {
-			const programParser = this.programParsers.get(pubkey);
+			const programParser = this.idlParsers.get(pubkey);
 			if (!programParser) {
 				return this.buildUnknownParsedInstruction(instruction.programId, instruction.keys, instruction.data);
 			}
@@ -215,7 +199,7 @@ export class SolanaParser {
 	 */
 	removeParser(programId: PublicKey) {
 		this.instructionParsers.delete(programId.toBase58());
-		this.programParsers.delete(programId.toBase58());
+		this.idlParsers.delete(programId.toBase58());
 	}
 
 	private buildUnknownParsedInstruction(programId: PublicKey, accounts: AccountMeta[], argData: unknown, name?: string): UnknownInstruction {
