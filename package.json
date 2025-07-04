@@ -1,7 +1,7 @@
 {
   "name": "@debridge-finance/solana-transaction-parser",
   "description": "Tool for parsing arbitrary Solana transactions with IDL/custom parsers",
-  "version": "3.3.0",
+  "version": "3.3.1",
   "author": "deBridge",
   "license": "LGPL-2.1",
   "homepage": "https://debridge.finance",

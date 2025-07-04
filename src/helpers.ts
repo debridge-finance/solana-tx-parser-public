@@ -264,6 +264,7 @@ function generateLogsParsingRegex() {
 		"Lookup table cannot be the recipient of reclaimed lamports",
 		"Lookup table is not deactivated",
 		"Table cannot be closed until it's fully deactivated in {} blocks",
+		"Program consumption: {} units remaining"
 	];
 
 	const prepareLineForRegex = (l: string) =>

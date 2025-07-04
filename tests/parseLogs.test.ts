@@ -190,6 +190,11 @@ describe("Test parse logs", () => {
 		assert.equal(parsed[8].programId, dstProgramId);
 	});
 
+	it("swap", async () => {
+		const transaction = await connection.getTransaction("rNSh2NzWQi8d6wQfKoGaAB2iatX1TVaqyJicNLmr6LP6SNcMMTxpZFssG7Gz2Y8JAkic3R7iFGiK1ZEkPSJ3Yp9", config);
+		parseLogs(transaction?.meta?.logMessages ?? []);
+	})
+
 	/*
 	it("claim DBR from lfg vault", async () => {
 		const transaction = await connection.getTransaction("vExfjh4tsxGij52vzwXAFm85atUoEuSeFdkbe3nP3s7ykmqpwYYQR2ueuJuiLuFL4AdBdQWFnNBPe9jnTkq3244", config);
