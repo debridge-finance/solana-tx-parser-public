@@ -34,7 +34,7 @@ Class for parsing arbitrary solana transactions in various formats
 
 Initializes parser object
 `SystemProgram`, `TokenProgram` and `AssociatedTokenProgram` are supported by default
-but may be overriden by providing custom idl/custom parser
+but may be overridden by providing custom idl/custom parser
 
 #### Parameters
 
