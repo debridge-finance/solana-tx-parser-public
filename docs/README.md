@@ -324,7 +324,7 @@ ___
 
 ▸ **flattenTransactionResponse**(`transaction`): `Transaction`
 
-Converts transaction response with CPI into artifical transaction that contains all instructions from tx and CPI
+Converts transaction response with CPI into artificial transaction that contains all instructions from tx and CPI
 
 #### Parameters
 
