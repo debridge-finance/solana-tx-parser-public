@@ -77,7 +77,7 @@
     "@solana/codecs": "2.0.0",
     "@solana/spl-token": "^0.4.15",
     "@solana/spl-type-length-value": "0.2.0",
-    "@solana/web3.js": "^1.99.0",
+    "@solana/web3.js": "^3.0.2",
     "buffer": "6.0.3"
   },
   "peerDependencies": {
